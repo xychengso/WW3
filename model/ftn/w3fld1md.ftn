@@ -14,7 +14,8 @@
 !/                                                      ( B. G. Reichl )
 !/    27-Jul-2016 : Added Charnock output  (J.Meixner)  ( version 5.12 )
 !/    22-Jun-2018 : updated SIG2WN subroutine (X.Chen)  ( version 6.xx )
-!/                  minor correction in finding top of WBL
+!/                  modified the range of wind profile computation; 
+!/                  corrected direction of the shortest waves
 !/                  
 !/
 !/    Copyright 2009 National Weather Service (NWS),
@@ -195,7 +196,8 @@
       !For stress calculation
       REAL                    ::  WAGE, CBETA, BP, CD,       &
                                   USTRB, ANGDIF, USTAR, ZNU, & 
-                                  TAUT, TAUX, TAUY, BETAG
+                                  TAUT, TAUX, TAUY, BETAG, TAUDIR, &
+                                  TAUDIRB
       !For wind profile calculation
       REAL                    ::  UPROFV, VPROFV
       !For wind profile iteration
@@ -223,7 +225,7 @@
                                            FTILDE, UP1, VP1, UP, VP, &
                                            TLTNA, TLTEA
 !/S      INTEGER, SAVE           :: IENT = 0
-      LOGICAL                 :: FSFL1,FSFL2
+      LOGICAL                 :: FSFL1,FSFL2, CRIT1, CRIT2
       LOGICAL                 :: IT_FLAG1, IT_FLAG2
       LOGICAL, SAVE           :: FIRST = .TRUE.
 !/
@@ -395,6 +397,9 @@
           ! Near surface turbulent stress = taunu
           TLTN(1) = TAUNUY
           TLTE(1) = TAUNUX
+
+        CALL APPENDTAIL(SPC2, WN, NKT, KA1, KA2, KA3,&
+                      atan2(TAUNUY,TAUNUX), SAT)
 !|---------------------------------------------------------------------|
 !|-----Calculate first guess at growth rate and local turbulent stress-|
 !|-----for integration as a function of wavedirection------------------|
@@ -458,6 +463,7 @@
 !|----Iterate til convergence------------------------------------------|
 !|---------------------------------------------------------------------|
           USTRB=SQRT(SQRT(TAUY**2.0+TAUX**2.0)/DAIR)
+          TAUDIRB=atan2(TAUY,TAUX)
           IT_FLAG2 = .TRUE.
           CTR=1
           DO WHILE ( (IT_FLAG2) .AND. ( CTR .LT. 10 ) )
@@ -521,15 +527,21 @@
             TAUX=TLTE(NKT) !from turbulent stress
             TAUT=SQRT(TAUY**2.0+TAUX**2.0)
             USTAR=SQRT(SQRT(TAUY**2.0+TAUX**2.0)/DAIR)
-            IF ((ABS(USTAR-USTRB)*100.0)/((USTAR+USTRB)*0.5) .GT. 0.1) THEN
+            TAUDIR=atan2(TAUY, TAUX)
+! Note: add another criterion (stress direction) for iteration.
+            CRIT1=(ABS(USTAR-USTRB)*100.0)/((USTAR+USTRB)*0.5) .GT. 0.1
+            CRIT2=(ABS(TAUDIR-TAUDIRB)*100.0/(TAUDIR+TAUDIRB)*0.5) .GT. 0.1
+            IF (CRIT1 .OR. CRIT2) THEN
+!            IF ((ABS(USTAR-USTRB)*100.0)/((USTAR+USTRB)*0.5) .GT. 0.1) THEN
                USTRB=USTAR
-              CTR=CTR+1
+               TAUDIRB=TAUDIR
+               CTR=CTR+1
             ELSE
               IT_FLAG2 = .FALSE.
             ENDIF
           ENDDO
-! Note: search for the top of WBL from top to bottom (corrected for very
-! long swell)
+! Note: search for the top of WBL from top to bottom (avoid problems
+! caused by  for very long swell)
           KB=NKT
           DO WHILE(((TLTN(KB)**2+TLTE(KB)**2)/(TAUX**2+TAUY**2)).GT. &
              .99)
@@ -543,8 +555,8 @@
             ZOFK(I)=DELTA/WN(I)
           ENDDO
           ZNU=0.1 * 1.45E-5 / SQRT(SQRT(TAUNUX**2.0+TAUNUY**2.0)/DAIR)
-          UPROF(1:NKT)=0.0
-          VPROF(1:NKT)=0.0
+          UPROF(1:NKT+1)=0.0
+          VPROF(1:NKT+1)=0.0
           UPROFV=0.0
           VPROFV=0.0
           ZI=1
@@ -569,7 +581,9 @@
                       / DAIR )**(1.5) * ( TAUNUY / ( TAUX * &
                       TAUNUX + TAUY * TAUNUY ) ) * LOG( &
                       ZOFK(Z2) / ZNU )
-          DO ZI=2, KB
+!Noted: wind profile computed till the inner layer height of the longest
+!wave, not just to the top of wave boundary layer (previous)
+          DO ZI=2, NKT
             Z2 = Z2 - 1
             UP1(ZI) = ( ( ( WN(Z2)**2.0 / DELTA ) * FTILDE(Z2) ) + &
                       ( DAIR / ( ZOFK(Z2) * KAPPA ) ) * ( SQRT( &
@@ -591,23 +605,23 @@
 !|---------------------------------------------------------------------|
           !ZI = ( KB + 1 )
           ! Now solving for 'ZWND' height wind 
-          UPROF(KB+1) = UPROF(KB) + ( SQRT( SQRT( TAUY**2.0 + &
+          UPROF(NKT+1) = UPROF(NKT) + ( SQRT( SQRT( TAUY**2.0 + &
                       TAUX**2.0 ) / DAIR ) ) / KAPPA * TAUX &
                       / SQRT( TAUY**2.0 +TAUX**2.0 ) * LOG( ZWND &
                       / ZOFK(Z2) )
-          VPROF(KB+1) = VPROF(KB) + ( SQRT( SQRT( TAUY**2.0 + &
+          VPROF(NKT+1) = VPROF(NKT) + ( SQRT( SQRT( TAUY**2.0 + &
                       TAUX**2.0 ) / DAIR ) ) / KAPPA * TAUY &
                       / SQRT( TAUY**2.0 +TAUX**2.0 ) * LOG( ZWND &
                       / ZOFK(Z2) )
           IF (ITER .EQ. 3) THEN
-             WND_1X = UPROF(KB+1)
-             WND_1Y = VPROF(KB+1)
+             WND_1X = UPROF(NKT+1)
+             WND_1Y = VPROF(NKT+1)
            ELSEIF (ITER .EQ. 2) THEN
-             WND_2X = UPROF(KB+1)
-             WND_2Y = VPROF(KB+1)
+             WND_2X = UPROF(NKT+1)
+             WND_2Y = VPROF(NKT+1)
            ELSEIF (ITER .EQ. 1) THEN
-             WND_3X = UPROF(KB+1)
-             WND_3Y = VPROF(KB+1)
+             WND_3X = UPROF(NKT+1)
+             WND_3Y = VPROF(NKT+1)
            ENDIF
 
               
@@ -654,8 +668,6 @@
           ! ENDIF
         ENDDO
         ITERATION = ITERATION + 1
-        CALL APPENDTAIL(SPC2, WN, NKT, KA1, KA2, KA3,&
-                      atan2(VPROF(KB),UPROF(KB)), SAT)
         DIFU10XX = WND_3X - WND_1X
         DIFU10YX = WND_3Y - WND_1Y
         DIFU10XY = WND_2X - WND_1X
@@ -1141,7 +1153,8 @@
         REAL,INTENT(IN)    :: SIG,DEPTH
         REAL,INTENT(OUT)   :: WN
 !/
-        real    :: wn1,wn2,sig1,sig2,dsigdk
+        real    :: wn1,wn2 !,sig1,sig2,dsigdk
+        real    :: fk, fk_slp
         integer :: i
         logical :: SWITCH
 !/ ------------------------------------------------------------------- /
