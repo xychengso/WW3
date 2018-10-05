@@ -83,8 +83,13 @@
 !/                  derivatives calculations to use W3GSRUMD:W3CGDM.
 !/                  (T.J. Campbell, NRL)                ( version 6.02 )
 !/    07-Jan-2018 : Generalizes ICE100WIND to ICESCALES ( version 6.04 )
+!/    26-Mar-2018 : Add FSWND optional variable.  JGLi  ( version 6.02 )
 !/    05-Jun-2018 : Add PDLIB/DEBUGINIT and implcit scheme parameters
 !/                  for unstructured grids              ( version 6.04 ) 
+!/    18-Aug-2018 : S_{ice} IC5 (Q. Liu)                ( version 6.06 )
+!/    20-Aug-2018:  Extra namelist variables for ST6    ( version 6.06)
+!/                  (Q. Liu, UoM)
+!/    26-Aug-2018 : UOST (Mentaschi et al. 2015, 2018)  ( version 6.06 )
 !/
 !/
 !/    Copyright 2009-2013 National Weather Service (NWS),
@@ -214,6 +219,7 @@
 !      FLSOU     Log.  Public   Flag for source term calcualtion.
 !      FUNO3     Log.  Public   Flag for 3rd order UNO3 scheme on SMC grid. 
 !      FVERG     Log.  Public   Flag for 1-2-1 averaging smoothing on SMC grid.
+!      FSWND     Log.  Public   Flag for sea-point only wind input on SMC grid.
 !      FLAGST    L.A.  Public   Flag for source term computations 
 !                               for individual grid points.
 !      IICEDISP   Log.  Public   Flag for use of the ice covered dispertion relation.
@@ -669,6 +675,7 @@
 !/IC4        INTEGER, POINTER      :: IC4PARS(:)
 !/IC4        REAL, POINTER         :: IC4_KI(:)
 !/IC4        REAL, POINTER         :: IC4_FC(:)
+!/IC5        REAL,    POINTER      :: IC5PARS(:)
 !/IS2        REAL,    POINTER      :: IS2PARS(:)
 !
 ! unstructured data
@@ -692,6 +699,18 @@
         INTEGER, POINTER      :: EDGES(:,:), NEIGH(:,:)
         REAL(8), POINTER      :: TRIA(:)
         REAL, POINTER         :: CROSSDIFF(:,:)
+
+!/UOST         CHARACTER(LEN=256)      :: UOSTFILELOCAL, UOSTFILESHADOW
+!/UOST         LOGICAL, ALLOCATABLE    :: UOST_LCL_OBSTRUCTED(:,:), UOST_SHD_OBSTRUCTED(:,:)
+!/UOST         INTEGER*1, ALLOCATABLE  :: UOSTLOCALALPHA(:,:,:,:), UOSTLOCALBETA(:,:,:,:)
+!/UOST         INTEGER*1, ALLOCATABLE  :: UOSTSHADOWALPHA(:,:,:,:), UOSTSHADOWBETA(:,:,:,:)
+!/UOST         REAL*4, ALLOCATABLE     :: UOSTCELLSIZE(:,:,:)
+!/UOST         REAL                    :: UOSTABMULTFACTOR = 100
+!/UOST         REAL                    :: UOSTCELLSIZEFACTOR = 1000
+!/UOST         REAL                    :: UOSTLOCALFACTOR = 1
+!/UOST         REAL                    :: UOSTSHADOWFACTOR = 1
+!/UOST         LOGICAL                 :: UOSTENABLED = .true.
+
       END TYPE GRID
 !
       TYPE SGRD   ! this is the spectral grid with all parameters that vary with freq. and direction
@@ -718,7 +737,7 @@
 !/PR2        REAL                  :: DTME, CLATMN
 !/PR3        REAL                  :: WDCG, WDTH
 !/SMC        REAL                  :: DTME, CLATMN, Refran
-!/SMC        LOGICAL               :: FUNO3, FVERG 
+!/SMC        LOGICAL               :: FUNO3, FVERG, FSWND 
       END TYPE PROP
 !
       TYPE FLDP
@@ -776,7 +795,8 @@
 !/ST4        REAL                  :: ZZWND
 !/ST4        REAL                  :: SSDSCOS, SSDSDTH, SSDSBR2, SSDSBM(0:4)
 !
-!/ST6        REAL                  :: SIN6A0, SDS6A1, SDS6A2, SWL6B1
+!/ST6        REAL                  :: SIN6A0, SDS6A1, SDS6A2, SWL6B1, &
+!/ST6                                 SIN6WS, SIN6FC
 !/ST6        INTEGER               :: SDS6P1, SDS6P2
 !/ST6        LOGICAL               :: SDS6ET, SWL6S6, SWL6CSTB1
 !
@@ -824,6 +844,12 @@
 !/DB1        LOGICAL               :: FDONLY
 !/DBX        REAL                  :: DUMMY
       END TYPE SDBP
+
+!/UOST      TYPE UOSTP
+!/UOST        CHARACTER(LEN=256)    :: UOSTFILELOCAL, UOSTFILESHADOW
+!/UOST        REAL              :: UOSTFACTORLOCAL, UOSTFACTORSHADOW
+!/UOST      END TYPE UOSTP
+
 !
       TYPE STRP
 !/TR0        REAL                  :: DUMMY
@@ -888,6 +914,7 @@
         TYPE(SNLP)            :: SNLPS
         TYPE(SBTP)            :: SBTPS
         TYPE(SDBP)            :: SDBPS
+!/UOST        TYPE(UOSTP)            :: UOSTPS
         TYPE(STRP)            :: STRPS
         TYPE(SBSP)            :: SBSPS
         TYPE(SICP)            :: SICPS
@@ -946,6 +973,7 @@
 !/IC4      INTEGER, POINTER        :: IC4PARS(:)
 !/IC4      REAL, POINTER           :: IC4_KI(:)
 !/IC4      REAL, POINTER           :: IC4_FC(:)
+!/IC5      REAL,    POINTER        :: IC5PARS(:)
 !/IS2      REAL,    POINTER        :: IS2PARS(:)
       INTEGER, POINTER        :: MAPSTA(:,:), MAPST2(:,:),            &
                                  MAPFS(:,:), MAPSF(:,:)
@@ -1022,7 +1050,7 @@
 !/PR2      REAL, POINTER           :: DTME, CLATMN
 !/PR3      REAL, POINTER           :: WDCG, WDTH
 !/SMC      REAL, POINTER           :: DTME, CLATMN, Refran
-!/SMC      LOGICAL, POINTER        :: FUNO3, FVERG 
+!/SMC      LOGICAL, POINTER        :: FUNO3, FVERG, FSWND 
 !/
 !/ Data aliasses for structure FLDP(S)
 !/
@@ -1070,7 +1098,8 @@
 !/ST4                                 SSWELLF(:), SSDSC(:), SSDSBR,        &
 !/ST4                                 SSDSP, WWNMEANP, SSTXFTF, SSTXFTWN,  &
 !/ST4                                 SSDSBR2, SSDSCOS, SSDSDTH, SSDSBM(:)
-!/ST6      REAL, POINTER           :: SIN6A0, SDS6A1, SDS6A2, SWL6B1
+!/ST6      REAL, POINTER           :: SIN6A0, SDS6A1, SDS6A2, SWL6B1, &
+!/ST6                                 SIN6WS, SIN6FC
 !/ST6      INTEGER, POINTER        :: SDS6P1, SDS6P2
 !/ST6      LOGICAL, POINTER        :: SDS6ET, SWL6S6, SWL6CSTB1
       REAL, POINTER           :: WWNMEANPTAIL, SSTXFTFTAIL
@@ -1106,6 +1135,10 @@
 !/
 !/DB1      REAL, POINTER           :: SDBC1, SDBC2
 !/DB1      LOGICAL, POINTER        :: FDONLY
+!/
+!/UOST!/ Data aliases for structure UOSTP(S)
+!/UOST      CHARACTER(LEN=:), POINTER   :: UOSTFILELOCAL, UOSTFILESHADOW
+!/UOST      REAL, POINTER           :: UOSTFACTORLOCAL, UOSTFACTORSHADOW
 !/
 !/ Data aliasing for structure SCHM(S)
       LOGICAL, POINTER  :: FSN,FSPSI,FSFCT,FSNIMP,FSTOTALIMP,FSTOTALEXP
@@ -1487,6 +1520,8 @@
 !/IC4       CHECK_ALLOC_STATUS ( ISTAT )
 !/IC4       ALLOCATE ( GRIDS(IMOD)%IC4_FC(NIC4), STAT=ISTAT )
 !/IC4       CHECK_ALLOC_STATUS ( ISTAT )
+!/IC5       ALLOCATE ( GRIDS(IMOD)%IC5PARS(8), STAT=ISTAT )
+!/IC5       CHECK_ALLOC_STATUS ( ISTAT )
 !/IS2       ALLOCATE ( GRIDS(IMOD)%IS2PARS(24), STAT=ISTAT )
 !/IS2       CHECK_ALLOC_STATUS ( ISTAT )
 #if defined(TEST_W3GDATMD) || defined(TEST_W3GDATMD_W3DIMX)
@@ -1902,6 +1937,7 @@
 !/IC4      IC4PARS => GRIDS(IMOD)%IC4PARS
 !/IC4      IC4_KI => GRIDS(IMOD)%IC4_KI
 !/IC4      IC4_FC => GRIDS(IMOD)%IC4_FC
+!/IC5      IC5PARS => GRIDS(IMOD)%IC5PARS
 !/IS2      IS2PARS => GRIDS(IMOD)%IS2PARS
       SX     => GRIDS(IMOD)%SX
       SY     => GRIDS(IMOD)%SY
@@ -2112,6 +2148,7 @@
 !/SMC      Refran => MPARS(IMOD)%PROPS%Refran
 !/SMC      FUNO3  => MPARS(IMOD)%PROPS%FUNO3 
 !/SMC      FVERG  => MPARS(IMOD)%PROPS%FVERG 
+!/SMC      FSWND  => MPARS(IMOD)%PROPS%FSWND
 !
 !     Structure FLDP
 !
@@ -2228,6 +2265,8 @@
 !/ST4      SSINBR   => MPARS(IMOD)%SRCPS%SSINBR
 !
 !/ST6      SIN6A0 => MPARS(IMOD)%SRCPS%SIN6A0
+!/ST6      SIN6WS => MPARS(IMOD)%SRCPS%SIN6WS
+!/ST6      SIN6FC => MPARS(IMOD)%SRCPS%SIN6FC
 !/ST6      SDS6ET => MPARS(IMOD)%SRCPS%SDS6ET
 !/ST6      SDS6A1 => MPARS(IMOD)%SRCPS%SDS6A1
 !/ST6      SDS6P1 => MPARS(IMOD)%SRCPS%SDS6P1
@@ -2301,6 +2340,12 @@
 !/DB1      SDBC1  => MPARS(IMOD)%SDBPS%SDBC1
 !/DB1      SDBC2  => MPARS(IMOD)%SDBPS%SDBC2
 !/DB1      FDONLY => MPARS(IMOD)%SDBPS%FDONLY
+!
+!
+!/UOST      UOSTFILELOCAL => MPARS(IMOD)%UOSTPS%UOSTFILELOCAL
+!/UOST      UOSTFILESHADOW => MPARS(IMOD)%UOSTPS%UOSTFILESHADOW
+!/UOST      UOSTFACTORLOCAL => MPARS(IMOD)%UOSTPS%UOSTFACTORLOCAL
+!/UOST      UOSTFACTORSHADOW => MPARS(IMOD)%UOSTPS%UOSTFACTORSHADOW
 !
 !     Structure SICPS
 !
