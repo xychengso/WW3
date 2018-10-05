@@ -148,7 +148,7 @@ do
   -N) nml_input=1 ;;
   -o) shift; outopt="$1" ;;
   -O) pomp=1 ;;
-  -p) shift; runcmd="$1" ; pmpi=1 ;;
+  -p) shift; runcmd="$1" ; runcmd1=$runcmd ; pmpi=1 ;;
   -q) shift; exit_p="$1" ;;
   -r) shift; exec_p="$1" ;;
   -s) shift; swtstr="$1" ;;
@@ -738,6 +738,8 @@ then
 if [ $nml_input ] && [ ! -z "`ls ${path_i}/${prog}.nml 2>/dev/null`" ]
 then
   ifile="`ls ${path_i}/${prog}.nml 2>/dev/null`"
+  files_p="spec.list"
+  files_p="$files_p $(cat ${ifile} | grep -i 'bound%file' |  cut -d '=' -f2 | cut -d "'" -f2 | cut -d '"' -f2 )"
 else
   ifile="`ls $path_i/$prog.inp 2>/dev/null`"
 fi
@@ -782,6 +784,14 @@ then
     # link conf file
     if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
     then
+      for file_p in ${files_p}
+      do
+        if [ -e ${path_i}/${file_p} ]
+        then
+          \rm -f ${file_p}
+          \ln -s ${path_i}/${file_p} .
+        fi
+      done
       \rm -f $prog.nml
       \ln -s $ifile $prog.nml
       ofile="$path_w/`basename $ifile .nml`${gu}.out"
@@ -840,7 +850,6 @@ fi
 
 if [ $? = 0 ]
 then
-
   echo ' '
   echo '+---------------------+'
   echo '| Prep forcing fields |'
@@ -944,7 +953,6 @@ fi
 
 if [ $? = 0 ]
 then
-
   echo ' '
   echo '+-------------------------------+'
   echo '| Prep of NetCDF forcing fields |'
@@ -1033,6 +1041,11 @@ then
 fi
 
 # 3.f Main program ---------------------------------------------------------- #
+
+if [ -e $path_i/bottomspectrum.inp ]
+then  
+  cp $path_i/bottomspectrum.inp .
+fi
 
 if [ $multi -ge 1 ]
 then
@@ -1135,10 +1148,12 @@ then
     \ln -s $ifile $prog.nml
     for file_p in ${files_p}
     do
+      echo $path_i/$file_p
       if [ -e ${path_i}/${file_p} ]
       then
         \rm -f ${file_p}
         \ln -s ${path_i}/${file_p} .
+        ls
       fi
     done
   else
@@ -1190,7 +1205,8 @@ then
 
   if [ $multi -eq 0 ] && [ $coupl = "OASIS" ]
   then
-    if $runcmd $path_e/$prgb : -np $nproc $path_w/toy_model | tee $ofile
+    halfnproc=$(($nproc / 2))
+    if $runcmd1 -np $halfnproc $path_e/$prgb : -np $halfnproc $path_w/toy_model | tee $ofile
     then
       \rm -f track_i.ww3
       \rm -f $prog.inp
@@ -1523,7 +1539,7 @@ fi
 if [ $exec_p = $prog -o $exec_p = "none" ]
 then
 
-# select inp/nml files
+# select inp/nml format for input file to program $prog
 if [ $nml_input ] && [ ! -z "`ls ${path_i}/${prog}*.nml 2>/dev/null`" ]
 then
   inputs="`ls ${path_i}/${prog}*.nml 2>/dev/null`"

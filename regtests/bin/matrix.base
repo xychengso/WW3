@@ -1823,7 +1823,6 @@
     then
       echo "$rtst -s ST6_PR3_UNO_OMP -w work_ST6_PR3_UNO_OMP -m grdset_a -f -O -n $np $ww3 mww3_test_05" >> matrix.body
     fi
-
 # - - - - - - - - - - - - 
 
   fi
@@ -1841,15 +1840,15 @@
   if [ "$smcgr" = 'y' ] && [ "$shrd" = 'y' ] && [ "$dist" != 'y' ]
   then
     echo ' ' >> matrix.body
-    echo "$rtst $ww3 -w work_SHRD_SMC ww3_tp2.10" >> matrix.body
-    echo "$rtst $ww3 -w work_SHRD_RTD ww3_tp2.11" >> matrix.body
+    echo "$rtst $ww3 -w work_SHRD_SMC -o both ww3_tp2.10" >> matrix.body
+    echo "$rtst $ww3 -w work_SHRD_RTD -o both ww3_tp2.11" >> matrix.body
   fi
 
   if [ "$smcgr" = 'y' ] && [ "$dist" = 'y' ]
   then
     echo ' ' >> matrix.body
-    echo "$rtst -s MPI -w work_MPI -f -p $mpi -n $np $ww3 ww3_tp2.10" >> matrix.body
-    echo "$rtst -s MPI -w work_MPI -f -p $mpi -n $np $ww3 ww3_tp2.11" >> matrix.body
+    echo "$rtst -s MPI -w work_MPI -f -p $mpi -n $np $ww3 -o both ww3_tp2.10" >> matrix.body
+    echo "$rtst -s MPI -w work_MPI -f -p $mpi -n $np $ww3 -o both ww3_tp2.11" >> matrix.body
   fi
 
 # mud/ice cases
@@ -1888,6 +1887,10 @@
     echo "$rtst -g 206H          -w work_IC4_M6H -i input_IC4/M6            $ww3 ww3_tic1.1" >> matrix.body
     echo "$rtst -g 206L          -w work_IC4_M6L -i input_IC4/M6            $ww3 ww3_tic1.1" >> matrix.body
     echo "$rtst                  -w work_IC4_M7  -i input_IC4/M7            $ww3 ww3_tic1.1" >> matrix.body
+    echo "$rtst -g 350m          -w w350m_IC5  -i input_IC5                 $ww3 ww3_tic1.1" >> matrix.body
+    echo "$rtst -g 1000m         -w w1000m_IC5 -i input_IC5                 $ww3 ww3_tic1.1" >> matrix.body
+    echo "$rtst -g 2500m         -w w2500m_IC5 -i input_IC5                 $ww3 ww3_tic1.1" >> matrix.body
+    echo "$rtst -g 1000m         -w w1000m_IC5  -i input_IC5 -o both        $ww3 ww3_tic1.1" >> matrix.body
     echo "$rtst                  -w work_IC3_A0.5k -i input_IC3_A0.5k       $ww3 ww3_tic1.2" >> matrix.body
     echo "$rtst                  -w work_IC3_A1.0k -i input_IC3_A1.0k       $ww3 ww3_tic1.2" >> matrix.body
     echo "$rtst                  -w work_IC3_A2.5k -i input_IC3_A2.5k       $ww3 ww3_tic1.2" >> matrix.body
@@ -1937,7 +1940,7 @@
     echo "$rtst -s MPI -w work_IC3_B2.5k_MPI -i input_IC3_B2.5k -f -p $mpi -n $np $ww3 ww3_tic1.2" >> matrix.body
   fi
 
-
+ # unstructured grid with PDLIB for domain decomposition and implicit solver
  if [ "$pdlib" = 'y' ] && [ "$dist" = 'y' ]
  then
    echo ' ' >> matrix.body
@@ -1947,6 +1950,21 @@
    echo "$rtst -s MPI -s PDLIB -w work_c -g c -f -p $mpi -n $np $ww3 ww3_tp2.17" >> matrix.body
    echo "$rtst -s MPI -s PDLIB -w work_mb -m grdset_b -f -p $mpi -n $np $ww3 ww3_tp2.17" >> matrix.body
    echo "$rtst -s MPI -s PDLIB -w work_mc -m grdset_c -f -p $mpi -n $np $ww3 ww3_tp2.17" >> matrix.body
+ fi
+
+ #Unresolved Obstacles Source Term (UOST) 
+ if [ "$uost" = 'y' ] 
+ then
+   echo ' ' >> matrix.body
+   if [ "$dist" = 'y' ]
+     echo "$rtst -s MPI -w work_rg_shel_MPI -i input_rg_shel $ww3 ww3_ts4" >> matrix.body
+     echo "$rtst -s MPI -w work_rg_multi_MPI -i input_rg_multi -m grdset $ww3 ww3_ts4" >> matrix.body
+     echo "$rtst -s MPI -w work_ug_MPI -i input_ug $ww3 ww3_ts4" >> matrix.body
+   else 
+     echo "$rtst -w work_rg_shel -i input_rg_shel $ww3 ww3_ts4" >> matrix.body
+     echo "$rtst -w work_rg_multi -i input_rg_multi -m grdset $ww3 ww3_ts4" >> matrix.body
+     echo "$rtst -w work_ug -i input_ug $ww3 ww3_ts4" >> matrix.body
+   fi
  fi
 
 # --------------------------------------------------------------------------- #

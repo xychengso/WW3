@@ -127,7 +127,7 @@
 !/ Local parameters
 !/
       INTEGER                 :: NDSI, NDSF, NDSM, NDSDAT, NDSTRC, NTRACE,  &
-                                 IERR, IFLD, ITYPE, I, J, IX, IY, NFCOMP,   &
+                                 IERR, IFLD, ITYPE, I, JJ, J, IX, IY, NFCOMP,   &
                                  TIME(2), DTTST, JX,                        &
                                  NXI, NYI, NXJ(2), NYJ(2),                  &
                                  TIDE_START(2), PRTIDE_DT, TIDE_END(2)
@@ -267,86 +267,72 @@
       CLOSE(NDSF)
       
 !
-!     COMPUTE VNEIGH 
-!
-      ALLOCATE(CONN(NX))
-
-      COUNTRI = 0
-      COUNTOT = 0
-      CONN(:) = 0
-!
-!calculate the number of connected triangles for a given point.
-!
-      DO IE = 1, NX
-        NI = IEN(IE,:)
-        CONN(NI) = CONN(NI) + 1
-      ENDDO
-      COUNTRI = MAXVAL(CONN)
-
+      COUNTRI = MAXVAL(CCON)
       ALLOCATE(VNEIGH(NX,2*COUNTRI))
+      ALLOCATE(CONN(NX))
       VNEIGH(:,:) = 0
+      CONN(:) = 0
 !
       J = 0
       DO IP = 1, NX
-        ifound = 0
+        IFOUND = 0
         DO II = 1, CCON(IP)
           J = J + 1
           IE = IE_CELL(J)
-
           IF (IP == TRIGP(IE,1)) THEN
             DO IP2=2,3
-              alreadyfound = 0
-              DO I=1,ifound
-                IF (VNEIGH(IP,I).EQ.TRIGP(IE,IP2)) alreadyfound=alreadyfound+1
+              ALREADYFOUND = 0
+              DO I=1,IFOUND
+                IF (VNEIGH(IP,I).EQ.TRIGP(IE,IP2)) ALREADYFOUND=ALREADYFOUND+1
                 END DO
-              IF (alreadyfound.EQ.0) THEN
-                ifound=ifound+1
-                VNEIGH(IP,ifound)=TRIGP(IE,IP2)
+              IF (ALREADYFOUND.EQ.0) THEN
+                IFOUND=IFOUND+1
+                VNEIGH(IP,IFOUND)=TRIGP(IE,IP2)
                 END IF
               END DO
            END IF
 
          IF (IP == TRIGP(IE,2)) THEN
             DO IP2=3,4
-              alreadyfound = 0
-              DO I=1,ifound
-                IF (VNEIGH(IP,I).EQ.TRIGP(IE,MOD(IP2-1,3)+1)) alreadyfound=alreadyfound+1
+              ALREADYFOUND = 0
+              DO I=1,IFOUND
+                IF (VNEIGH(IP,I).EQ.TRIGP(IE,MOD(IP2-1,3)+1)) ALREADYFOUND=ALREADYFOUND+1
                 END DO
-              IF (alreadyfound.EQ.0) THEN
-                ifound=ifound+1
-                VNEIGH(IP,ifound)=TRIGP(IE,MOD(IP2-1,3)+1)
+              IF (ALREADYFOUND.EQ.0) THEN
+                IFOUND=IFOUND+1
+                VNEIGH(IP,IFOUND)=TRIGP(IE,MOD(IP2-1,3)+1)
                 END IF
               END DO
             END IF
 
          IF (IP == TRIGP(IE,3)) THEN
             DO IP2=1,2
-              alreadyfound = 0
-              DO I=1,ifound
-                IF (VNEIGH(IP,I).EQ.TRIGP(IE,IP2)) alreadyfound=alreadyfound+1
+              ALREADYFOUND = 0
+              DO I=1,IFOUND
+                IF (VNEIGH(IP,I).EQ.TRIGP(IE,IP2)) ALREADYFOUND=ALREADYFOUND+1
                 END DO
-              IF (alreadyfound.EQ.0) THEN
-                ifound=ifound+1
-                VNEIGH(IP,ifound)=TRIGP(IE,IP2)
+              IF (ALREADYFOUND.EQ.0) THEN
+                IFOUND=IFOUND+1
+                VNEIGH(IP,IFOUND)=TRIGP(IE,IP2)
                 END IF
               END DO
             END IF
         END DO ! CCON
-!
-! COUNTCON is a counter on connected points. In comparison with the number of connected triangle
+! CONN is a counter on connected points. In comparison with the number of connected triangle
 ! CCON, it will enable to spot whether a point belong to the contour
 !         
-        COUNTCON(IP)=ifound
-
-        do I=2,ifound
-           do J=1,i-1
-           if (VNEIGH(IP,J).EQ. VNEIGH(IP,I)) THEN
+        CONN(IP)=IFOUND
+        do I=2,IFOUND
+           do JJ=1,i-1
+           if (VNEIGH(IP,JJ).EQ. VNEIGH(IP,I)) THEN
               COUNTCON(IP)=COUNTCON(IP)-1
-              ! WRITE(993,*) 'ERROR:',IP,I,J,VNEIGH(IP,J),VNEIGH(IP,I)
+              VNEIGH(IP,I:IFOUND)=VNEIGH(IP,I+1:IFOUND+1)  ! removes the double point
+              ! WRITE(993,*) 'ERROR:',IP,I,J,VNEIGH(IP,JJ),VNEIGH(IP,I)
               END IF
            enddo
         enddo
       END DO !NX   
+
 !
 ! Counts the number of tidal constituents
 !
@@ -586,6 +572,8 @@
       CALL EXTCDE ( 43 )
 !
   888 CONTINUE
+      WRITE (NDSO,999)
+
 !
 ! Formats
 !
@@ -594,6 +582,10 @@
   901 FORMAT ( '  Comment character is ''',A,''''/)
   902 FORMAT ( '  Grid name : ',A/)
   973 FORMAT ( '           Time : ',A)
+!
+  999 FORMAT(//'  End of program '/                                   &
+               ' ========================================='/          &
+               '         WAVEWATCH III Input preprocessing '/)
 !
  1000 FORMAT (/' *** WAVEWATCH III ERROR IN W3PRTIDE : '/               &
                '     ERROR IN OPENING INPUT FILE'/                    &
