@@ -1476,9 +1476,6 @@
 !/FLD1      ELSE 
 !/FLD1          CHARN = AALPHA 
 !/FLD1      ENDIF
-!/FLD1!    Note: the following line prevent stability correction coefficent
-!/FLD1!    from changing the magnitude of the sea-state depedent ustar during output.
-!/FLD1      USTAR = USTAR/COEF   
 !/FLD2      IF (U10ABS.GT.10. .and. HSTOT.gt.0.5) then
 !/FLD2          CALL W3FLD2 ( SPEC,min(FPI/TPI,2.0),COEF*U10ABS*COS(U10DIR),        &
 !/FLD2                    COEF*U10ABS*Sin(U10DIR), ZWND, DEPTH, 0.0, &
@@ -1486,9 +1483,6 @@
 !/FLD2      ELSE 
 !/FLD2          CHARN = AALPHA 
 !/FLD2      ENDIF
-!/FLD2!    Note: the following line prevent stability correction coefficent
-!/FLD2!    from changing the magnitude of the sea-state depedent ustar during output.
-!/FLD2      USTAR = USTAR/COEF   
 !
 ! 12. includes shoreline reflection --------------------------------------------- *
 !
