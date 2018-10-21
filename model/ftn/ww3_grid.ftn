@@ -2473,11 +2473,11 @@
 !/FLD1      TAILTYPE = 0
 !/FLD1      TAILLEV  = 0.006
 !/FLD1      TAILT1 = 1.25
-!/FLD1      TAILT2 = 3.00
+!/FLD1      TAILT2 = 2.50
 !/FLD2      TAILTYPE = 0
 !/FLD2      TAILLEV  = 0.006
 !/FLD2      TAILT1 = 1.25
-!/FLD2      TAILT2 = 3.00
+!/FLD2      TAILT2 = 2.50
 !
 !/FLD1      CALL READNL ( NDSS, 'FLD1', STATUS )
 !/FLD1      TAILLEV  = MIN( MAX ( 0.0005 , TAILLEV ), 0.04)
