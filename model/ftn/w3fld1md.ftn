@@ -13,7 +13,7 @@
 !/    15-Jan-2016 : Updates                             ( version 5.12 )
 !/                                                      ( B. G. Reichl )
 !/    27-Jul-2016 : Added Charnock output  (J.Meixner)  ( version 5.12 )
-!/    22-Jun-2018 : updated SIG2WN subroutine (X.Chen)  ( version 6.xx )
+!/    22-Jun-2018 : updated SIG2WN subroutine (X.Chen)  ( version 6.06 )
 !/                  modified the range of wind profile computation; 
 !/                  corrected direction of the shortest waves
 !/                  
