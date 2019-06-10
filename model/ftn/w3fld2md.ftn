@@ -13,7 +13,11 @@
 !/    19-Mar-2015 : Extending for non-10 m winds        (version 5.12)
 !/    27-Jul-2016 : Added Charnock output (J.Meixner)   (version 5.12)
 !/    22-Jun-2018 : Minor modification for application in shallow water.
+<<<<<<< HEAD
 !/                                        (X.Chen)      (version 6.xx)
+=======
+!/                                        (X.Chen)      (version 6.06)
+>>>>>>> 913dc83d468c720b2d2c8e01ca4c735e363b70a0
 !/
 !/    Copyright 2009 National Weather Service (NWS),
 !/       National Oceanic and Atmospheric Administration.  All rights

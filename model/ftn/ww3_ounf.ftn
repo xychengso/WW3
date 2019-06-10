@@ -30,6 +30,7 @@
 !/    27-Jun-2018 : Updated to handle SMC output.       ( version 6.05 )
 !/    26-Jul-2018 : Changed reading of TABIPART         ( version 6.05 )
 !/    12-Sep-2018 : Added extra partitioned fields      ( version 6.06 )
+!/    25-Sep-2018 : Add WBT parameter                   ( version 6.06 )
 !/
 !/    Copyright 2009-2013 National Weather Service (NWS),
 !/       National Oceanic and Atmospheric Administration.  All rights
@@ -129,7 +130,7 @@
                           CFLTHMAX, CFLXYMAX, CFLKMAX, TAUICE, PHICE,  &
                           STMAXE, STMAXD, HMAXE, HCMAXE, HMAXD, HCMAXD,&
                           P2SMS, EF, US3D, TH1M, STH1M, TH2M, STH2M,   &
-                          WN, USSP
+                          WN, USSP, WBT
       USE W3ODATMD, ONLY: NDSO, NDSE, SCREEN, NOGRP, NGRPP, IDOUT,     &
                           UNDEF, FLOGRD, FNMPRE, NOSWLL, NOGE
 !
@@ -390,6 +391,9 @@
            CYCLE
         ENDIF
         NBIPART = NBIPART + 1
+        IF(NBIPART .GT. NOSWLL) THEN
+           GOTO 803
+        ENDIF
         TABIPART(NBIPART) = IPART
       ENDDO
 !
@@ -571,6 +575,10 @@
       WRITE (NDSE,1002) IERR
       CALL EXTCDE ( 12 )
 !
+  803 CONTINUE
+      WRITE (NDSE,1003) NBIPART, NOSWLL
+      CALL EXTCDE (13)
+!
   888 CONTINUE
       WRITE (NDSO,999)
 !
@@ -634,6 +642,10 @@
                '     ERROR IN READING FROM INPUT FILE'/               &
                '     IOSTAT =',I5/)
 !
+ 1003 FORMAT (/' *** WAVEWATCH III WERROR IN W3EXNC : '/              &
+               '     OUT OF RANGE REQUEST FOR NBIPART =',I2, /        &
+               '     MAX SWELL PARTITIONS (NOSW) =',I2 /)
+!
  1010 FORMAT (/' *** WAVEWATCH III ERROR IN W3OUNF : '/               &
                '     ILLEGAL TYPE, NCTYPE =',I4/)
  1012 FORMAT (/' *** WAVEWATCH III ERROR IN W3OUNF : '/               &
@@ -641,7 +653,7 @@
 !
  1500 FORMAT (/' *** WAVEWATCH III WARNING IN W3EXNC : '/             &
                '     IGNORING REQUEST FOR IPART =',I2, /              &
-               '     MAX SWELL PARITIONS (NOSWLL) =',I2 /)
+               '     MAX SWELL PARTITIONS (NOSW) =',I2 /)
 !
 !/
 !/ Internal subroutine W3EXNC ---------------------------------------- /
@@ -787,11 +799,11 @@
 !
       CHARACTER*80            :: VARNM(8),VARNL(8)
       CHARACTER*120           :: VARNS(8),VARNG(8), VARND(8), STR2
-      CHARACTER*256           :: VARNC(8), PARTCOM
-      CHARACTER*20            :: UNITVAR(3),FORMAT1
+      CHARACTER*512           :: VARNC(8), PARTCOM
+      CHARACTER*30            :: UNITVAR(3),FORMAT1
       CHARACTER*30            :: STRSTARTDATE
       CHARACTER               :: FNAMENC*50,                           &
-                                 ENAME*6,FORMF*11, UNITS*24, UNITS2*24
+                                 ENAME*10,FORMF*11, UNITS*24, UNITS2*24
       CHARACTER, SAVE         :: OLDTIMEID*16 = '0000000000000000'
       CHARACTER, SAVE         :: TIMEID*16 = '0000000000000000'
 !
@@ -909,7 +921,7 @@
         WRITE(PARTCOM, '("Wave components defined using ",F5.3,'   //  &
                   '"Hz spectral frequency cutoff")') PTFCUT
       ELSE
-        WRITE(PARTCOM, '("PTM_",I1,"_Uknknown")') PTMETH
+        WRITE(PARTCOM, '("PTM_",I1,"_Unknown")') PTMETH
       ENDIF
 
 !/SMC!
@@ -1137,7 +1149,7 @@
               IF( SMCGRD ) THEN
 !/SMC                 CALL W3S2XY_SMC(ICE, X1)
               ELSE
-                CALL W3S2XY ( NSEA, NSEA, NX+1, NY, ICE   , MAPSF, X1 )
+                CALL W3S2XY ( NSEA, NSEA, NX+1, NY, ICE(1:NSEA), MAPSF, X1 )
               ENDIF
 
               NFIELD=1
@@ -1191,7 +1203,7 @@
 !/IS2              FSC = 0.001
 !/IS2              UNITS = 'm'
 !/IS2              ENAME = '.ic1'
-!/IS2              CALL W3S2XY (NSEA, NSEA, NX+1, NY, ICEH  , MAPSF, X1 )
+!/IS2              CALL W3S2XY (NSEA, NSEA, NX+1, NY, ICEH(1:NSEA), MAPSF, X1 )
 !/IS2              NFIELD=1
 !/IS2              VARNM(1)='ic1'
 !/IS2              VARNL(1)='ice thickness'
@@ -1207,7 +1219,7 @@
 !/IS2              FSC = 0.05
 !/IS2              UNITS = 'm'
 !/IS2              ENAME = '.ic5'
-!/IS2              CALL W3S2XY (NSEA, NSEA, NX+1, NY, ICEF  , MAPSF, X1 )
+!/IS2              CALL W3S2XY (NSEA, NSEA, NX+1, NY, ICEF(1:NSEA), MAPSF, X1 )
 !/IS2              NFIELD=1
 !/IS2              VARNM(1)='ic5'
 !/IS2              VARNL(1)='maximum floe diameter'
@@ -1562,6 +1574,25 @@
               VARND(1)=''
               VMIN = 0
               VMAX = 32000
+!
+            ELSE IF ( IFI .EQ. 2 .AND. IFJ .EQ. 17 ) THEN
+              FSC    = 0.001
+              UNITS  = '1'
+              ENAME  = '.wbt'
+              IF( SMCGRD ) THEN
+!/SMC                CALL W3S2XY_SMC( WBT, X1 )
+              ELSE
+                 CALL W3S2XY ( NSEA, NSEA, NX+1, NY, WBT, MAPSF, X1 )
+              END IF
+              NFIELD=1
+              VARNM(1)='wbt'
+              VARNL(1)='domiant wave breaking probability'
+              VARNS(1)='domiant_wave_breaking_probability'
+              VARNG(1)='domiant_wave_breaking_probability'
+              VARNC(1)=''
+              VARND(1)=''
+              VMIN = 0
+              VMAX = 1000
 !
             ELSE IF ( IFI .EQ. 3 .AND. IFJ .EQ. 1 ) THEN
               ! Information for spectral
@@ -2006,14 +2037,14 @@
             ELSE IF ( IFI .EQ. 4 .AND. IFJ .EQ. 12 ) THEN
               FSC    = 0.01
               UNITS  = 's'
-              WRITE(ENAME,'(A7,I1)') '.ptm10_',IPART
+              WRITE(ENAME,'(A7,I1)') '.ptm10c',IPART
               IF( SMCGRD ) THEN
 !/SMC                 CALL W3S2XY_SMC( PTM1(:,IPART), X1 )
               ELSE
                 CALL W3S2XY ( NSEA, NSEA, NX+1, NY, PTM1(:,IPART), MAPSF, X1 )
               ENDIF
               NFIELD=1
-              WRITE(VARNM(1),'(A6,I1)') 'ptm10_',IPART
+              WRITE(VARNM(1),'(A6,I1)') 'ptm10c',IPART
               WRITE(VARNL(1),'(A,I1)') 'mean period Tm10 partition ',IPART
               WRITE(VARNS(1),'(A,I1)') &
                   'sea_surface_wave_mean_period_tm10_partition_',IPART
@@ -2027,14 +2058,14 @@
             ELSE IF ( IFI .EQ. 4 .AND. IFJ .EQ. 13 ) THEN
               FSC    = 0.01
               UNITS  = 's'
-              WRITE(ENAME,'(A6,I1)') '.pt01_',IPART
+              WRITE(ENAME,'(A6,I1)') '.pt01c',IPART
               IF( SMCGRD ) THEN
 !/SMC                 CALL W3S2XY_SMC( PT1(:,IPART), X1 )
               ELSE
                 CALL W3S2XY ( NSEA, NSEA, NX+1, NY, PT1(:,IPART), MAPSF, X1 )
               ENDIF
               NFIELD=1
-              WRITE(VARNM(1),'(A5,I1)') 'pt01_',IPART
+              WRITE(VARNM(1),'(A5,I1)') 'pt01c',IPART
               WRITE(VARNL(1),'(A,I1)') 'mean period T01 partition ',IPART
               WRITE(VARNS(1),'(A,I1)') &
                   'sea_surface_wave_mean_period_t01_partition_',IPART
@@ -2048,14 +2079,14 @@
             ELSE IF ( IFI .EQ. 4 .AND. IFJ .EQ. 14 ) THEN
               FSC    = 0.01
               UNITS  = 's'
-              WRITE(ENAME,'(A6,I1)') '.pt02_',IPART
+              WRITE(ENAME,'(A6,I1)') '.pt02c',IPART
               IF( SMCGRD ) THEN
 !/SMC                 CALL W3S2XY_SMC( PT2(:,IPART), X1 )
               ELSE
                 CALL W3S2XY ( NSEA, NSEA, NX+1, NY, PT2(:,IPART), MAPSF, X1 )
               ENDIF
               NFIELD=1
-              WRITE(VARNM(1),'(A5,I1)') 'pt02_',IPART
+              WRITE(VARNM(1),'(A5,I1)') 'pt02c',IPART
               WRITE(VARNL(1),'(A,I1)') 'mean period T02 partition ',IPART
               WRITE(VARNS(1),'(A,I1)') &
                   'sea_surface_wave_mean_period_t02_partition_',IPART
@@ -3081,15 +3112,15 @@
               CALL W3S2XY ( NSEA, NSEA, NX+1,NY,MSSX,MAPSF, XX )
               CALL W3S2XY ( NSEA, NSEA, NX+1,NY,MSSY,MAPSF, XY )
               NFIELD=2
-              VARNM(1)='mssx'
-              VARNM(2)='mssy'
-              VARNL(1)='x-direction mean square slope'
-              VARNL(2)='y-direction mean square slope'
+              VARNM(1)='mssu'
+              VARNM(2)='mssc'
+              VARNL(1)='downwave mean square slope'
+              VARNL(2)='crosswave mean square slope'
               VARNS(1)='x_mean_square_slope'
               VARNS(2)='y_mean_square_slope'
               VARNG(1)='x_mean_square_slope'
               VARNG(2)='y_mean_square_slope'
-              VARNC(1)='mss=mssx+mssy'
+              VARNC(1)='mss=mssu+mssc'
               WRITE(VARNC(1),'(A,F8.4,A,F8.4,A)') 'Frequency range ',SIG(1)*TPIINV,' to ',SIG(NK)*TPIINV,' Hz'
               VARND(1)=''
               VARND(2)=''
@@ -3150,7 +3181,7 @@
               CALL W3S2XY ( NSEA, NSEA, NX+1, NY, MSSD   , MAPSF, X1 )
               NFIELD=1
               VARNM(1)='mssd'
-              VARNL(1)='x direction for mss'
+              VARNL(1)='u direction for mss'
               VARNS(1)='sea_surface_wave_dominant_mean_square_slope_direction'
               VARNG(1)='sea_surface_wave_dominant_mean_square_slope_direction'
               WRITE(VARNC(1),'(A,F8.4,A,F8.4,A)') 'Frequency range ',SIG(1)*TPIINV,' to ',SIG(NK)*TPIINV,' Hz'
@@ -4646,9 +4677,7 @@
 !
 ! Error escape locations
 !
-  800 CONTINUE
-      WRITE (NDSE,1000) IERR
-      CALL EXTCDE (2)
+
 !
 ! Formats
 !
@@ -4656,10 +4685,6 @@
   999 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXNC :'/                &
                '     PLEASE UPDATE FIELDS !!! '/                      &
                '     IFI = ',I2, '- IFJ = ',I2/)
-!
- 1000 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXNC : '/               &
-               '     ERROR IN OPENING OUTPUT FILE'/                   &
-               '     IOSTAT =',I5/)
 !               
 !/T 9000 FORMAT (' TEST W3EXNC : FLAGS :',I3,2X,20L2)
 !/T 9001 FORMAT (' TEST W3EXNC : ITPYE :',I4/                         &
@@ -5055,7 +5080,7 @@
       IF (IRET .NE. NF90_NOERR) THEN
         WRITE(NDSE,*) ' *** WAVEWATCH III ERROR IN OUNF :'
         WRITE(NDSE,*) ' NETCDF ERROR MESSAGE: '
-        WRITE(*,*) NF90_STRERROR(IRET)
+        WRITE(NDSE,*) NF90_STRERROR(IRET)
         CALL EXTCDE ( 59 )
       END IF
       RETURN
@@ -5068,7 +5093,7 @@
 !/
 !/ End of W3OUNF ----------------------------------------------------- /
 !/
-     END PROGRAM W3OUNF
+      END PROGRAM W3OUNF
 
 
 

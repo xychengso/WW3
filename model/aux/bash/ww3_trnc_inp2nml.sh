@@ -6,8 +6,18 @@ then
   echo '  [ERROR] need ww3_trnc input filename in argument [ww3_trnc.inp]'
   exit 1
 fi
-inp=$1
-cur_dir=$(dirname $1)
+
+# link to temporary inp with regtest format
+inp="$( cd "$( dirname "$1" )" && pwd )/$(basename $1)"
+if [ ! -z $(echo $inp | awk -F'ww3_trnc\\..inp\\..' '{print $2}') ] ; then
+ new_inp=$(echo $(echo $inp | awk -F'ww3_trnc\\..inp\\..' '{print $1}')ww3_trnc_$(echo $inp | awk -F'ww3_trnc\\..inp\\..' '{print $2}').inp)
+ ln -sfn $inp $new_inp
+ old_inp=$inp
+ inp=$new_inp
+fi
+
+cd $( dirname $inp)
+cur_dir="../$(basename $(dirname $inp))"
 
 
 version=$(bash --version | awk -F' ' '{print $4}')
@@ -40,13 +50,14 @@ do
     continue
   fi
 
-  echo $line >> $cleaninp
+  echo "$line" >> $cleaninp
 
 done
 
+
+
 #------------------------------
 # get all values from clean inp file
-
 
 readarray -t lines < "$cleaninp"
 il=0
@@ -129,15 +140,17 @@ if [ "$netcdf" != 3 ];  then  echo "  FILE%NETCDF        = $netcdf" >> $nmlfile;
 cat >> $nmlfile << EOF
 /
 
-
 ! -------------------------------------------------------------------- !
 ! WAVEWATCH III - end of namelist                                      !
 ! -------------------------------------------------------------------- !
 EOF
-
+echo "DONE : $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $nmlfile)"
 rm -f $cleaninp
+if [ ! -z $(echo $old_inp | awk -F'ww3_trnc\\..inp\\..' '{print $2}') ] ; then
+  unlink $new_inp
+  addon="$(echo $(basename $nmlfile) | awk -F'ww3_trnc_' '{print $2}' | awk -F'\\..nml' '{print $1}'  )"
+  new_nmlfile="ww3_trnc.nml.$addon"
+  mv $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $nmlfile) $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $new_nmlfile)
+  echo "RENAMED  : $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $new_nmlfile)"
+fi
 #------------------------------
-
-
-
-
