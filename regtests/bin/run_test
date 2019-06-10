@@ -43,7 +43,6 @@ myname="`basename $0`"  #name of script
 optstr="a:c:C:defg:Ghi:m:n:No:Op:q:r:s:t:Sw:"  #option string for getopt function
 usage ()
 {
-
 cat 2>&1 << EOF
 
 Usage: $myname [options] source_dir test_name
@@ -166,8 +165,6 @@ then
   usage
   exit 1
 fi
-#uncomment next line to add S & T switches to every test 
-#testST=1  
 if [ ! $exec_p = "none" ]
 then
   exit_p=$exec_p
@@ -458,12 +455,6 @@ then
   else
     \cp -f $file_c $path_b/switch
   fi
-  if [ $testST ] 
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
-  fi
   if $path_b/w3_make $prog
   then :
   else
@@ -528,10 +519,6 @@ then
       if [ $multi -eq 2 ]
       then
         mv mod_def.ww3 mod_def.$g
-        if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-        then
-          mv $prog.nml.log ${prog}_$g.nml.log
-        fi
       fi
     else
       errmsg "Error occured during $path_e/$prog execution"
@@ -578,12 +565,6 @@ then
 
   else
     \cp -f $file_c $path_b/switch
-  fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
   fi
   if $path_b/w3_make $prog
   then :
@@ -634,10 +615,6 @@ then
       then
         mv restart.ww3 restart.$g
         \rm -f mod_def.ww3
-        if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-        then
-          mv $prog.nml.log ${prog}_$g.nml.log
-        fi
       fi
     else
       errmsg "Error occured during $path_e/$prog execution"
@@ -686,12 +663,6 @@ then
   else
     \cp -f $file_c $path_b/switch
   fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
-  fi
   if $path_b/w3_make $prog
   then :
   else
@@ -740,10 +711,6 @@ then
       then
         mv nest.ww3 nest.$g
         \rm -f mod_def.ww3
-        if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-        then
-          mv $prog.nml.log ${prog}_$g.nml.log
-        fi
       fi
     else
       errmsg "Error occured during $path_e/$prog execution"
@@ -771,6 +738,8 @@ then
 if [ $nml_input ] && [ ! -z "`ls ${path_i}/${prog}.nml 2>/dev/null`" ]
 then
   ifile="`ls ${path_i}/${prog}.nml 2>/dev/null`"
+  files_p="spec.list"
+  files_p="$files_p $(cat ${ifile} | grep -i 'bound%file' |  cut -d '=' -f2 | cut -d "'" -f2 | cut -d '"' -f2 )"
 else
   ifile="`ls $path_i/$prog.inp 2>/dev/null`"
 fi
@@ -791,12 +760,6 @@ then
                   sed 's/OMPH //'    | sed 's/PDLIB //'  > $path_b/switch
   else
     \cp -f $file_c $path_b/switch
-  fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
   fi
   if $path_b/w3_make $prog
   then :
@@ -821,6 +784,14 @@ then
     # link conf file
     if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
     then
+      for file_p in ${files_p}
+      do
+        if [ -e ${path_i}/${file_p} ]
+        then
+          \rm -f ${file_p}
+          \ln -s ${path_i}/${file_p} .
+        fi
+      done
       \rm -f $prog.nml
       \ln -s $ifile $prog.nml
       ofile="$path_w/`basename $ifile .nml`${gu}.out"
@@ -846,10 +817,6 @@ then
       then
         mv nest.ww3 nest.$g
         \rm -f mod_def.ww3
-        if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-        then
-          mv $prog.nml.log ${prog}_$g.nml.log
-        fi
       fi
     else
       errmsg "Error occured during $path_e/$prog execution"
@@ -896,12 +863,6 @@ then
                   sed 's/OMPH //'    | sed 's/PDLIB //'  > $path_b/switch
   else
     \cp -f $file_c $path_b/switch
-  fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
   fi
   if $path_b/w3_make $prog
   then :
@@ -957,10 +918,6 @@ then
         then
           \rm -f mod_def.ww3
           mv $otype.ww3 $otype.$g
-          if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-          then
-            mv $prog.nml.log ${prog}_$g.nml.log
-          fi
         fi
       else
         errmsg "Error occured during $path_e/$prog execution"
@@ -1009,12 +966,6 @@ then
                   sed 's/OMPH //'    | sed 's/PDLIB //'  > $path_b/switch
   else
     \cp -f $file_c $path_b/switch
-  fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
   fi
   if $path_b/w3_make $prog
   then :
@@ -1070,10 +1021,6 @@ then
         then
           \rm -f mod_def.ww3
           mv $otype.ww3 $otype.$g
-          if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-          then
-            mv $prog.nml.log ${prog}_$g.nml.log
-          fi
         fi
       else
         errmsg "Error occured during $path_e/$prog execution"
@@ -1149,6 +1096,8 @@ fi
 if [ $nml_input ] && [ ! -z "`ls ${path_i}/${fileconf}.nml 2>/dev/null`" ]
 then
   ifile="`ls ${path_i}/${fileconf}.nml 2>/dev/null`"
+  files_p="points.list"
+  files_p="$files_p $(cat ${ifile} | grep -i 'point%file' |  cut -d '=' -f2 | cut -d "'" -f2 | cut -d '"' -f2 )"
 else
   ifile="`ls $path_i/${fileconf}.inp 2>/dev/null`"
 fi
@@ -1164,12 +1113,6 @@ then
   echo ' '
 
   \cp -f $file_c $path_b/switch
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
-  fi
   if $path_b/w3_make $prgb
   then :
   else
@@ -1203,6 +1146,16 @@ then
   then
     \rm -f $prog.nml
     \ln -s $ifile $prog.nml
+    for file_p in ${files_p}
+    do
+      echo $path_i/$file_p
+      if [ -e ${path_i}/${file_p} ]
+      then
+        \rm -f ${file_p}
+        \ln -s ${path_i}/${file_p} .
+        ls
+      fi
+    done
   else
     \rm -f $prog.inp
     \ln -s $ifile $prog.inp
@@ -1325,12 +1278,6 @@ then
   else
     \cp -f $file_c $path_b/switch
   fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
-  fi
   if $path_b/w3_make $prog
   then :
   else
@@ -1441,12 +1388,6 @@ then
   else
     \cp -f $file_c $path_b/switch
   fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
-  fi
   if $path_b/w3_make $prog
   then :
   else
@@ -1509,10 +1450,6 @@ then
         then
           \rm -f mod_def.ww3
           \rm -f out_grd.ww3
-          if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-          then
-            mv $prog.nml.log ${prog}_$g.nml.log
-          fi
           ofiles="`ls ww3.????????.* 2>/dev/null`"
           if [ $? = 0 ]
           then
@@ -1628,12 +1565,6 @@ then
   else
     \cp -f $file_c $path_b/switch
   fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
-  fi
   if $path_b/w3_make $prog
   then :
   else
@@ -1694,10 +1625,6 @@ then
         then
           \rm -f mod_def.ww3
           \rm -f out_pnt.ww3
-          if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-          then
-            mv $prog.nml.log ${prog}_$g.nml.log
-          fi
         fi
       else
         errmsg "Error occured during $path_e/$prog execution"
@@ -1759,12 +1686,6 @@ then
                   sed 's/OMPH //'    | sed 's/PDLIB //'  > $path_b/switch
   else
     \cp -f $file_c $path_b/switch
-  fi
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
   fi
   if $path_b/w3_make $prog
   then :
@@ -1837,10 +1758,6 @@ then
       if [ $multi -eq 2 ]
       then
         \rm -f track_o.ww3
-        if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-        then
-          mv $prog.nml.log ${prog}_$g.nml.log
-        fi
         if [ -e track.ww3 ]
         then
           mv track.ww3 track.$g
@@ -1898,13 +1815,7 @@ then
 #                  sed 's/OMPH //'    | sed 's/PDLIB //'  > $path_b/switchh
 #  else
 #    \cp -f $file_c $path_b/switch
-#  fi  
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch 
-    rm $path_b/switch_noST
-  fi
+#  fi
   if $path_b/w3_make $prog
   then :
   else
@@ -1966,93 +1877,6 @@ if [ $exit_p = $prog ]
 then
   exit
 fi
-
-# 3.k Update Restart File ------------------------------------------ #
-
-prog=ww3_uprstr
-if [ $exec_p = $prog -o $exec_p = "none" ]
-then
-
-# Check for input file
-
-# select inp/nml files
-#if [ $nml_input ] && [ ! -z "`ls ${path_i}/${prog}.nml 2>/dev/null`" ]
-#then
-#  ifile="`ls ${path_i}/${prog}.nml 2>/dev/null`"
-#else
-  ifile="`ls $path_i/$prog.inp 2>/dev/null`"
-#fi
-
-if [ $? = 0 ]
-then
-
-  echo ' '
-  echo '+-------------------------+'
-  echo '|   Update Restart File   |'
-  echo '+-------------------------+'
-  echo ' '
-
-  \cp -f $file_c $path_b/switch
-  if [ $testST ]
-  then #add S T switches 
-    \cp -f $path_b/switch $path_b/switch_noST
-    cat $path_b/switch_noST | sed 's/F90/F90 S T /' > $path_b/switch
-    rm $path_b/switch_noST
-  fi
-  if $path_b/w3_make $prog
-  then :
-  else
-    errmsg "Error occured during WW3 $prog build"
-    exit 1
-  fi
-
-  # link conf file
-  if [ $nml_input ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
-  then
-    \rm -f $prog.nml
-    \ln -s $ifile $prog.nml
-    ofile="$path_w/`basename $ifile .nml`.out"
-  else
-    \rm -f $prog.inp
-    \ln -s $ifile $prog.inp
-    ofile="$path_w/`basename $ifile .inp`.out"
-  fi
-
-  echo "   Processing $ifile"
-  echo "   Screen output copied to $ofile"
-  
-# Additional Files
-   \rm -f anl.grbtxt
-   \ln -s "$path_i/anl.grbtxt" anl.grbtxt
-   
-  mv -f restart001.ww3 restart.ww3
-  
-  if [ $pmpi ]
-  then
-    if [ $nproc ]
-    then
-      runcmd="$runcmd -np $nproc"
-    fi
-  fi
-  if $runcmd $path_e/$prog | tee $ofile
-  then
-    \rm -f $prog.inp
-    \rm -f $prog.nml
-  else
-    errmsg "Error occured during $path_e/$prog execution"
-    exit 1
-  fi
-
-fi
-
-fi
-
-if [ $exit_p = $prog ]
-then
-  exit
-fi
-
-
 
 # 3.k End ------------------------------------------------------------------- #
 

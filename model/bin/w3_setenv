@@ -130,7 +130,7 @@ EOF
     fi
   else
     echo "[ERROR] no env file wwatch3.env found."
-    echo "        Please run $path_bin/w3_setup <model_dir> -c <comp> -s <switch>"
+    echo "        Please run $path_bin/w3_setup <main_dir> -c <comp> -s <switch>"
     exit 1
   fi
 
@@ -170,8 +170,6 @@ EOF
       if [ "$do_set" = 'y' ]
       then
         $path_bin/w3_setup -t "$path_mod/tmp" $path_mod
-        temp_dir=$path_mod/tmp
-        main_dir=$path_mod
       fi
     fi
 
@@ -185,15 +183,13 @@ EOF
       echo "Update WWATCH3_DIR [u] or keep [k] or exit [e] ?"
       read OK
       case $OK in
-        'u'|'U') do_set='y' ;;
+        'y'|'Y') do_set='y' ;;
         'k'|'K') do_set='n' ;;
         'e'|'E') exit       ;;
       esac
       if [ "$do_set" = 'y' ]
       then
         $path_bin/w3_setup -t "$path_mod/tmp" $path_mod
-        temp_dir=$path_mod/tmp
-        main_dir=$path_mod
       fi
     fi
   fi
@@ -203,7 +199,7 @@ EOF
   then
     echo ' '
     echo "[ERROR] Directory $main_dir not found"
-    echo "        Please run $path_bin/w3_setup <model_dir> -c <comp> -s <switch>"
+    echo "        Please run $path_bin/w3_setup <main_dir> -c <comp> -s <switch>"
     exit 1
   fi
 

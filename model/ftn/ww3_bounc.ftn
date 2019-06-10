@@ -179,8 +179,6 @@
       NDSM   = 20
       NDSS   = 30
       NDSL   = 50
-      NDSO   = 6
-      NDSE   = 6
 !
       NDSTRC =  6
       NTRACE = 10
@@ -385,8 +383,7 @@
           IF (ICODE.NE.0) THEN 
             LONS(IP)=-999.
             LATS(IP)=-999.
-            WRITE (NDSE,1010) TRIM(SPECFILES(IP))
-            CALL EXTCDE ( 70 )
+            GOTO 810
           END IF
  
           IRET=NF90_OPEN(TRIM(SPECFILES(IP)),NF90_NOWRITE,NCID(IP))
@@ -495,7 +492,8 @@
             CALL CHECK_ERR(IRET)
           END IF
           ! apply scale_factor and add_offset
-          SPEC2D(:,:,:,IP)=(SPEC2D(:,:,:,IP)*FACTOR)+OFFSET
+          SPEC2D=(SPEC2D*FACTOR)+OFFSET
+
          
           ! close spectra file
           IRET=NF90_CLOSE(NCID(IP))
@@ -743,6 +741,10 @@
       WRITE (NDSE,1009) IERR
       CALL EXTCDE ( 69 )
 !
+ 810 CONTINUE
+      WRITE (NDSE,1010) TRIM(SPECFILES(IP))
+      CALL EXTCDE ( 70 )
+!
   888 CONTINUE
       WRITE (NDSO,999)
 
@@ -814,7 +816,7 @@
 !/
 !/ End of W3BOUNC ---------------------------------------------------- /
 !/
-      END PROGRAM W3BOUNC
+     END PROGRAM W3BOUNC
 !/ ------------------------------------------------------------------- /
 
 
@@ -833,7 +835,7 @@
       IF (IRET .NE. NF90_NOERR) THEN
         WRITE(NDSE,*) ' *** WAVEWATCH III ERROR IN BOUNC :'
         WRITE(NDSE,*) ' NETCDF ERROR MESSAGE: '
-        WRITE(NDSE,*) NF90_STRERROR(IRET)
+        WRITE(*,*) NF90_STRERROR(IRET)
         CALL EXTCDE ( 59 )
       END IF
       RETURN

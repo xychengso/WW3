@@ -1,10 +1,8 @@
 watch3.env
 cases
 data_regtests
-smc_docs/*.pdf 
-smc_docs/SMCG_TKs/*.ps
+smc_docs
 ww3_from_ftp.tar.gz
-ww3_from_ftp.v6.07.tar.gz
 guide/*.log
 guide/*.aux
 guide/*.bbl
@@ -79,7 +77,3 @@ model/bin/w3prnt
 model/bin/w3split
 model/wwatch3.env
 model/bin/wwatch3.env
-*.swp
-*/*.swp
-*/*/*.swp
-*/*/*/*.swp

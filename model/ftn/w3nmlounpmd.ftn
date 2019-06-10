@@ -72,7 +72,6 @@
 
   ! miscellaneous
   CHARACTER(256)                :: MSG
-  INTEGER                       :: NDSN
 
 
 
@@ -140,6 +139,8 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
@@ -162,14 +163,6 @@
     IERR = 0
 !/S      CALL STRACE (IENT, 'W3NMLOUNP')
 
-    ! open namelist log file
-    NDSN = 3
-    OPEN (NDSN, file=TRIM(INFILE)//'.log', form='formatted', iostat=IERR)
-       IF (IERR.NE.0) THEN
-      WRITE (NDSE,'(A)') 'ERROR: open full nml file '//TRIM(INFILE)//'.log failed'
-      RETURN
-    END IF
-
     ! open input file
     OPEN (NDSI, file=TRIM(INFILE), form='formatted', status='old', iostat=IERR)
     IF (IERR.NE.0) THEN
@@ -178,28 +171,47 @@
     END IF
 
     ! read point namelist
-    CALL READ_POINT_NML (NDSI, NML_POINT)
-    CALL REPORT_POINT_NML (NML_POINT)
+    CALL READ_POINT_NML (NDSI, NML_POINT, IERR)
+    IF (IERR.NE.0) THEN
+      WRITE (NDSE,'(A)') 'ERROR: error occured in READ_POINT_NML'
+      RETURN
+    END IF
+!/T    CALL REPORT_POINT_NML (NML_POINT)
 
     ! read file namelist
-    CALL READ_FILE_NML (NDSI, NML_FILE)
-    CALL REPORT_FILE_NML (NML_FILE)
+    CALL READ_FILE_NML (NDSI, NML_FILE, IERR)
+    IF (IERR.NE.0) THEN
+      WRITE (NDSE,'(A)') 'ERROR: error occured in READ_FILE_NML'
+      RETURN
+    END IF
+!/T    CALL REPORT_FILE_NML (NML_FILE)
 
     ! read spectra namelist
-    CALL READ_SPECTRA_NML (NDSI, NML_SPECTRA)
-    CALL REPORT_SPECTRA_NML (NML_SPECTRA)
+    CALL READ_SPECTRA_NML (NDSI, NML_SPECTRA, IERR)
+    IF (IERR.NE.0) THEN
+      WRITE (NDSE,'(A)') 'ERROR: error occured in READ_SPECTRA_NML'
+      RETURN
+    END IF
+!/T    CALL REPORT_SPECTRA_NML (NML_SPECTRA)
 
     ! read param namelist
-    CALL READ_PARAM_NML (NDSI, NML_PARAM)
-    CALL REPORT_PARAM_NML (NML_PARAM)
+    CALL READ_PARAM_NML (NDSI, NML_PARAM, IERR)
+    IF (IERR.NE.0) THEN
+      WRITE (NDSE,'(A)') 'ERROR: error occured in READ_PARAM_NML'
+      RETURN
+    END IF
+!/T    CALL REPORT_PARAM_NML (NML_PARAM)
 
     ! read source namelist
-    CALL READ_SOURCE_NML (NDSI, NML_SOURCE)
-    CALL REPORT_SOURCE_NML (NML_SOURCE)
+    CALL READ_SOURCE_NML (NDSI, NML_SOURCE, IERR)
+    IF (IERR.NE.0) THEN
+      WRITE (NDSE,'(A)') 'ERROR: error occured in READ_SOURCE_NML'
+      RETURN
+    END IF
+!/T    CALL REPORT_SOURCE_NML (NML_SOURCE)
 
-    ! close namelist files
+    ! close namelist file
     CLOSE (NDSI)
-    CLOSE (NDSN)
 
   END SUBROUTINE W3NMLOUNP
 
@@ -213,7 +225,7 @@
 
 !/ ------------------------------------------------------------------- /
 
-  SUBROUTINE READ_POINT_NML (NDSI, NML_POINT)
+  SUBROUTINE READ_POINT_NML (NDSI, NML_POINT, IERR)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -236,6 +248,7 @@
 !     ----------------------------------------------------------------
 !      NDSI         Int.
 !      NML_POINT    Type.
+!      IERR         Int.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -264,21 +277,22 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
     USE W3ODATMD, ONLY: NDSE
-    USE W3SERVMD, ONLY: EXTCDE
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)                 :: NDSI
     TYPE(NML_POINT_T), INTENT(INOUT)    :: NML_POINT
+    INTEGER, INTENT(OUT)                :: IERR
 
     ! locals
-    INTEGER                                :: IERR
     TYPE(NML_POINT_T) :: POINT
     NAMELIST /POINT_NML/ POINT
 !/S      INTEGER, SAVE                           :: IENT = 0
@@ -286,7 +300,7 @@
     IERR = 0
 !/S      CALL STRACE (IENT, 'READ_POINT_NML')
 
-    ! set default values for point structure
+    ! set default values for field structure
     POINT%TIMESTART  = '19000101 000000'
     POINT%TIMESTRIDE = '0'
     POINT%TIMECOUNT  = '1000000000'
@@ -304,7 +318,7 @@
       WRITE (NDSE,'(A,/A)') &
         'ERROR: READ_POINT_NML: namelist read error', &
         'ERROR: '//TRIM(MSG)
-      CALL EXTCDE (1)
+      RETURN
     END IF
 
     ! save namelist
@@ -318,7 +332,7 @@
 
 !/ ------------------------------------------------------------------- /
 
-  SUBROUTINE READ_FILE_NML (NDSI, NML_FILE)
+  SUBROUTINE READ_FILE_NML (NDSI, NML_FILE, IERR)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -341,6 +355,7 @@
 !     ----------------------------------------------------------------
 !      NDSI         Int.
 !      NML_FILE     Type.
+!      IERR         Int.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -369,21 +384,22 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
     USE W3ODATMD, ONLY: NDSE
-    USE W3SERVMD, ONLY: EXTCDE
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)                 :: NDSI
     TYPE(NML_FILE_T), INTENT(INOUT)     :: NML_FILE
+    INTEGER, INTENT(OUT)                :: IERR
 
     ! locals
-    INTEGER                                :: IERR
     TYPE(NML_FILE_T) :: FILE
     NAMELIST /FILE_NML/ FILE
 !/S    INTEGER, SAVE                       :: IENT = 0
@@ -399,11 +415,11 @@
     ! read file namelist
     REWIND (NDSI)
     READ (NDSI, nml=FILE_NML, iostat=IERR, iomsg=MSG)
-    IF (IERR.GT.0) THEN
+    IF (IERR.NE.0) THEN
       WRITE (NDSE,'(A,/A)') &
         'ERROR: READ_FILE_NML: namelist read error', &
         'ERROR: '//TRIM(MSG)
-      CALL EXTCDE (2)
+      RETURN
     END IF
 
     ! save namelist
@@ -417,7 +433,7 @@
 
 !/ ------------------------------------------------------------------- /
 
-  SUBROUTINE READ_SPECTRA_NML (NDSI, NML_SPECTRA)
+  SUBROUTINE READ_SPECTRA_NML (NDSI, NML_SPECTRA, IERR)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -440,6 +456,7 @@
 !     ----------------------------------------------------------------
 !      NDSI         Int.
 !      NML_SPECTRA  Type.
+!      IERR         Int.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -468,21 +485,22 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
     USE W3ODATMD, ONLY: NDSE
-    USE W3SERVMD, ONLY: EXTCDE
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)                 :: NDSI
     TYPE(NML_SPECTRA_T), INTENT(INOUT)  :: NML_SPECTRA
+    INTEGER, INTENT(OUT)                :: IERR
 
     ! locals
-    INTEGER                                :: IERR
     TYPE(NML_SPECTRA_T) :: SPECTRA
     NAMELIST /SPECTRA_NML/ SPECTRA
 !/S    INTEGER, SAVE                       :: IENT = 0
@@ -490,7 +508,7 @@
     IERR = 0
 !/S      CALL STRACE (IENT, 'READ_SPECTRA_NML')
 
-    ! set default values for spectra structure
+    ! set default values for file structure
     SPECTRA%OUTPUT      = 3
     SPECTRA%SCALE_FAC   = 1
     SPECTRA%OUTPUT_FAC  = 0
@@ -499,11 +517,11 @@
     ! read spectra namelist
     REWIND (NDSI)
     READ (NDSI, nml=SPECTRA_NML, iostat=IERR, iomsg=MSG)
-    IF (IERR.GT.0) THEN
+    IF (IERR.NE.0) THEN
       WRITE (NDSE,'(A,/A)') &
         'ERROR: READ_SPECTRA_NML: namelist read error', &
         'ERROR: '//TRIM(MSG)
-      CALL EXTCDE (3)
+      RETURN
     END IF
 
     ! save namelist
@@ -516,7 +534,7 @@
 
 !/ ------------------------------------------------------------------- /
 
-  SUBROUTINE READ_PARAM_NML (NDSI, NML_PARAM)
+  SUBROUTINE READ_PARAM_NML (NDSI, NML_PARAM, IERR)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -539,6 +557,7 @@
 !     ----------------------------------------------------------------
 !      NDSI         Int.
 !      NML_PARAM    Type.
+!      IERR         Int.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -567,21 +586,22 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
     USE W3ODATMD, ONLY: NDSE
-    USE W3SERVMD, ONLY: EXTCDE
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)                 :: NDSI
     TYPE(NML_PARAM_T), INTENT(INOUT)    :: NML_PARAM
+    INTEGER, INTENT(OUT)                :: IERR
 
     ! locals
-    INTEGER                                :: IERR
     TYPE(NML_PARAM_T) :: PARAM
     NAMELIST /PARAM_NML/ PARAM
 !/S    INTEGER, SAVE                       :: IENT = 0
@@ -589,17 +609,17 @@
     IERR = 0
 !/S      CALL STRACE (IENT, 'READ_PARAM_NML')
 
-    ! set default values for param structure
+    ! set default values for file structure
     PARAM%OUTPUT      = 3
 
     ! read param namelist
     REWIND (NDSI)
     READ (NDSI, nml=PARAM_NML, iostat=IERR, iomsg=MSG)
-    IF (IERR.GT.0) THEN
+    IF (IERR.NE.0) THEN
       WRITE (NDSE,'(A,/A)') &
         'ERROR: READ_PARAM_NML: namelist read error', &
         'ERROR: '//TRIM(MSG)
-      CALL EXTCDE (4)
+      RETURN
     END IF
 
     ! save namelist
@@ -611,7 +631,7 @@
 
 
 
-  SUBROUTINE READ_SOURCE_NML (NDSI, NML_SOURCE)
+  SUBROUTINE READ_SOURCE_NML (NDSI, NML_SOURCE, IERR)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -634,6 +654,7 @@
 !     ----------------------------------------------------------------
 !      NDSI         Int.
 !      NML_SOURCE   Type.
+!      IERR         Int.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -662,21 +683,22 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
     USE W3ODATMD, ONLY: NDSE
-    USE W3SERVMD, ONLY: EXTCDE
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)                 :: NDSI
     TYPE(NML_SOURCE_T), INTENT(INOUT)   :: NML_SOURCE
+    INTEGER, INTENT(OUT)                :: IERR
 
     ! locals
-    INTEGER                                :: IERR
     TYPE(NML_SOURCE_T) :: SOURCE
     NAMELIST /SOURCE_NML/ SOURCE
 !/S    INTEGER, SAVE                       :: IENT = 0
@@ -684,27 +706,20 @@
     IERR = 0
 !/S      CALL STRACE (IENT, 'READ_SOURCE_NML')
 
-    ! set default values for source structure
+    ! set default values for file structure
     SOURCE%OUTPUT      = 4
     SOURCE%SCALE_FAC   = 0
     SOURCE%OUTPUT_FAC  = 0
-    SOURCE%TABLE_FAC   = 0
-    SOURCE%SPECTRUM    = .TRUE.
-    SOURCE%INPUT       = .TRUE.
-    SOURCE%INTERACTIONS= .TRUE.
-    SOURCE%DISSIPATION = .TRUE.
-    SOURCE%BOTTOM      = .TRUE.
-    SOURCE%ICE         = .TRUE.
-    SOURCE%TOTAL       = .TRUE.
+
 
     ! read source namelist
     REWIND (NDSI)
     READ (NDSI, nml=SOURCE_NML, iostat=IERR, iomsg=MSG)
-    IF (IERR.GT.0) THEN
+    IF (IERR.NE.0) THEN
       WRITE (NDSE,'(A,/A)') &
         'ERROR: READ_SOURCE_NML: namelist read error', &
         'ERROR: '//TRIM(MSG)
-      CALL EXTCDE (5)
+      RETURN
     END IF
 
     ! save namelist
@@ -772,10 +787,13 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
+    USE W3ODATMD, ONLY: SCREEN
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
@@ -786,20 +804,20 @@
 !/S      CALL STRACE (IENT, 'REPORT_POINT_NML')
 
       WRITE (MSG,'(A)') 'POINT % '
-      WRITE (NDSN,'(A)')
-      WRITE (NDSN,10) TRIM(MSG),'TIMESTART  = ', TRIM(NML_POINT%TIMESTART)
-      WRITE (NDSN,10) TRIM(MSG),'TIMESTRIDE = ', TRIM(NML_POINT%TIMESTRIDE)
-      WRITE (NDSN,10) TRIM(MSG),'TIMECOUNT  = ', TRIM(NML_POINT%TIMECOUNT)
+      WRITE (SCREEN,'(A)')
+      WRITE (SCREEN,10) TRIM(MSG),'TIMESTART  = ', TRIM(NML_POINT%TIMESTART)
+      WRITE (SCREEN,10) TRIM(MSG),'TIMESTRIDE = ', TRIM(NML_POINT%TIMESTRIDE)
+      WRITE (SCREEN,10) TRIM(MSG),'TIMECOUNT  = ', TRIM(NML_POINT%TIMECOUNT)
 
-      WRITE (NDSN,11) TRIM(MSG),'TIMESPLIT  = ', NML_POINT%TIMESPLIT
-      WRITE (NDSN,10) TRIM(MSG),'LIST       = ', TRIM(NML_POINT%LIST)
-      WRITE (NDSN,13) TRIM(MSG),'SAMEFILE   = ', NML_POINT%SAMEFILE
-      WRITE (NDSN,11) TRIM(MSG),'BUFFER     = ', NML_POINT%BUFFER
-      WRITE (NDSN,11) TRIM(MSG),'TYPE       = ', NML_POINT%TYPE
-      WRITE (NDSN,13) TRIM(MSG),'DIMORDER   = ', NML_POINT%DIMORDER
+      WRITE (SCREEN,11) TRIM(MSG),'TIMESPLIT  = ', NML_POINT%TIMESPLIT
+      WRITE (SCREEN,10) TRIM(MSG),'LIST       = ', TRIM(NML_POINT%LIST)
+      WRITE (SCREEN,13) TRIM(MSG),'SAMEFILE   = ', NML_POINT%SAMEFILE
+      WRITE (SCREEN,11) TRIM(MSG),'BUFFER     = ', NML_POINT%BUFFER
+      WRITE (SCREEN,11) TRIM(MSG),'TYPE       = ', NML_POINT%TYPE
+      WRITE (SCREEN,13) TRIM(MSG),'DIMORDER   = ', NML_POINT%DIMORDER
 
 10  FORMAT (A,2X,A,A)
-11  FORMAT (A,2X,A,I8)
+11  FORMAT (A,2X,A,I1)
 13  FORMAT (A,2X,A,L1)
 
   END SUBROUTINE REPORT_POINT_NML
@@ -863,10 +881,13 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
+    USE W3ODATMD, ONLY: SCREEN
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
@@ -877,13 +898,13 @@
 !/S      CALL STRACE (IENT, 'REPORT_FILE_NML')
 
       WRITE (MSG,'(A)') 'FILE % '
-      WRITE (NDSN,'(A)')
-      WRITE (NDSN,10) TRIM(MSG),'PREFIX    = ', TRIM(NML_FILE%PREFIX)
-      WRITE (NDSN,11) TRIM(MSG),'NETCDF    = ', NML_FILE%NETCDF
+      WRITE (SCREEN,'(A)')
+      WRITE (SCREEN,10) TRIM(MSG),'PREFIX    = ', TRIM(NML_FILE%PREFIX)
+      WRITE (SCREEN,11) TRIM(MSG),'NETCDF    = ', NML_FILE%NETCDF
 
 
 10  FORMAT (A,2X,A,A)
-11  FORMAT (A,2X,A,I8)
+11  FORMAT (A,2X,A,I1)
 
   END SUBROUTINE REPORT_FILE_NML
 
@@ -942,10 +963,13 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
+    USE W3ODATMD, ONLY: SCREEN
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
@@ -956,14 +980,14 @@
 !/S      CALL STRACE (IENT, 'REPORT_SPECTRA_NML')
 
       WRITE (MSG,'(A)') 'SPECTRA % '
-      WRITE (NDSN,'(A)')
-      WRITE (NDSN,11) TRIM(MSG),'OUTPUT     = ', NML_SPECTRA%OUTPUT
-      WRITE (NDSN,14) TRIM(MSG),'SCALE_FAC  = ', NML_SPECTRA%SCALE_FAC
-      WRITE (NDSN,14) TRIM(MSG),'OUTPUT_FAC = ', NML_SPECTRA%OUTPUT_FAC
+      WRITE (SCREEN,'(A)')
+      WRITE (SCREEN,11) TRIM(MSG),'OUTPUT     = ', NML_SPECTRA%OUTPUT
+      WRITE (SCREEN,14) TRIM(MSG),'SCALE_FAC  = ', NML_SPECTRA%SCALE_FAC
+      WRITE (SCREEN,14) TRIM(MSG),'OUTPUT_FAC = ', NML_SPECTRA%OUTPUT_FAC
 
 
-11  FORMAT (A,2X,A,I8)
-14  FORMAT (A,2X,A,F8.2)
+11  FORMAT (A,2X,A,I1)
+14  FORMAT (A,2X,A,F5.2)
 
   END SUBROUTINE REPORT_SPECTRA_NML
 
@@ -1022,10 +1046,13 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
+    USE W3ODATMD, ONLY: SCREEN
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
@@ -1036,10 +1063,10 @@
 !/S      CALL STRACE (IENT, 'REPORT_PARAM_NML')
 
       WRITE (MSG,'(A)') 'PARAM % '
-      WRITE (NDSN,'(A)')
-      WRITE (NDSN,11) TRIM(MSG),'OUTPUT     = ', NML_PARAM%OUTPUT
+      WRITE (SCREEN,'(A)')
+      WRITE (SCREEN,11) TRIM(MSG),'OUTPUT     = ', NML_PARAM%OUTPUT
 
-11  FORMAT (A,2X,A,I8)
+11  FORMAT (A,2X,A,I1)
 
   END SUBROUTINE REPORT_PARAM_NML
 
@@ -1097,10 +1124,13 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
+    USE W3ODATMD, ONLY: SCREEN
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
@@ -1111,23 +1141,23 @@
 !/S      CALL STRACE (IENT, 'REPORT_SOURCE_NML')
 
       WRITE (MSG,'(A)') 'SOURCE % '
-      WRITE (NDSN,'(A)')
-      WRITE (NDSN,11) TRIM(MSG),'OUTPUT       = ', NML_SOURCE%OUTPUT
-      WRITE (NDSN,14) TRIM(MSG),'SCALE_FAC    = ', NML_SOURCE%SCALE_FAC
-      WRITE (NDSN,14) TRIM(MSG),'OUTPUT_FAC   = ', NML_SOURCE%OUTPUT_FAC
-      WRITE (NDSN,11) TRIM(MSG),'TABLE_FAC    = ', NML_SOURCE%TABLE_FAC
-      WRITE (NDSN,13) TRIM(MSG),'SPECTRUM     = ', NML_SOURCE%SPECTRUM
-      WRITE (NDSN,13) TRIM(MSG),'INPUT        = ', NML_SOURCE%INPUT
-      WRITE (NDSN,13) TRIM(MSG),'INTERACTIONS = ', NML_SOURCE%INTERACTIONS
-      WRITE (NDSN,13) TRIM(MSG),'DISSIPATION  = ', NML_SOURCE%DISSIPATION
-      WRITE (NDSN,13) TRIM(MSG),'ICE          = ', NML_SOURCE%ICE
-      WRITE (NDSN,13) TRIM(MSG),'TOTAL        = ', NML_SOURCE%TOTAL
+      WRITE (SCREEN,'(A)')
+      WRITE (SCREEN,11) TRIM(MSG),'OUTPUT       = ', NML_SOURCE%OUTPUT
+      WRITE (SCREEN,14) TRIM(MSG),'SCALE_FAC    = ', NML_SOURCE%SCALE_FAC
+      WRITE (SCREEN,14) TRIM(MSG),'OUTPUT_FAC   = ', NML_SOURCE%OUTPUT_FAC
+      WRITE (SCREEN,11) TRIM(MSG),'TABLE_FAC    = ', NML_SOURCE%TABLE_FAC
+      WRITE (SCREEN,13) TRIM(MSG),'SPECTRUM     = ', NML_SOURCE%SPECTRUM
+      WRITE (SCREEN,13) TRIM(MSG),'INPUT        = ', NML_SOURCE%INPUT
+      WRITE (SCREEN,13) TRIM(MSG),'INTERACTIONS = ', NML_SOURCE%INTERACTIONS
+      WRITE (SCREEN,13) TRIM(MSG),'DISSIPATION  = ', NML_SOURCE%DISSIPATION
+      WRITE (SCREEN,13) TRIM(MSG),'ICE          = ', NML_SOURCE%ICE
+      WRITE (SCREEN,13) TRIM(MSG),'TOTAL        = ', NML_SOURCE%TOTAL
 
 
 
-11  FORMAT (A,2X,A,I8)
+11  FORMAT (A,2X,A,I1)
 13  FORMAT (A,2X,A,L1)
-14  FORMAT (A,2X,A,F8.2)
+14  FORMAT (A,2X,A,F5.2)
 
   END SUBROUTINE REPORT_SOURCE_NML
 

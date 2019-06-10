@@ -422,7 +422,7 @@ contains
 !----------------------------------------------------------------------------------
 !------------------------------------------------------------------------------
 subroutine xnl_init(sigma,dird,nsigma,ndir,pftail,x_grav,depth,ndepth, &
-&   iquad,iqgrid,iproc,ierr)
+&   iquad,iqgrid,iproc,ierror)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -490,7 +490,7 @@ real, intent(in)     ::  x_grav        ! gravitational acceleration
 integer, intent(in)  ::  iquad         ! Type of method for computing nonlinear interactions
 integer, intent(in)  ::  iqgrid        ! Type of grid for computing nonlinear interactions
 integer, intent(in)  ::  iproc         ! Processor number, controls output file for MPI
-integer, intent(out) ::  ierr        ! Error indicator. If no errors are detected IERR=0
+integer, intent(out) ::  ierror        ! Error indicator. If no errors are detected IERR=0
 !
 !  4. Error messages
 !
@@ -554,7 +554,7 @@ iufind     = 1                 ! search for unit numbers automatically
 !----------------------------------------------------------------------------
 ! Initialisations
 !
-ierr     = 0                 ! set error condition
+ierror     = 0                 ! set error condition
 iq_stack   = 0                 ! initialize stack for tracing subroutines
 qbase      = 'xnl4v5'          ! Base name for quadruplet files
 qf_error   = 'xnl5_errors.txt' ! Text file with error messages
@@ -578,12 +578,12 @@ iq_screen = 0             ! enable output to screen
 ! Check input
 !------------------------------------------------------------------------------
 if(iq_type<1 .or. iq_type>3) then
-  ierr = 1
+  ierror = 1
   goto 9999
 end if
 !
 if(iq_grid<1 .or. iq_grid>3) then
-  ierr = 2
+  ierror = 2
   goto 9999
 end if
 !
@@ -609,14 +609,14 @@ if(iq_grid==1 .or. iq_grid==2) then
 !  check if gap equal to step in the case of full circle
 !
   if(abs(dstep-dgap) < 0.001) then
-    ierr = 31
+    ierror = 31
     goto 9999
   end if
 !
 !  check if sector is symmetric around zero in the case of sector grid
 !
   if(abs(dird(1)+dird(ndir)) > 0.01) then
-    ierr = 32
+    ierror = 32
     goto 9999
   end if
 end if
@@ -650,7 +650,7 @@ end if
 call z_fileio(trim(qbase)//'.err','DF',iufind,luq_err,iuerr)
 if(iuerr/=0) then
   call q_error('e','FILEIO','Problem in deleting error file *.ERR')
-  ierr = 4
+  ierror = 4
   goto 9999
 end if
 !
@@ -680,7 +680,7 @@ if(iproc >=0) write(luq_prt,'(a,i5)') '(MPI) processor number:',iproc
 !---------------------------------------------------------------------------------
 call q_setconfig(iquad)
 if (iq_err /=0) then
-  ierr = 5
+  ierror = 5
   goto 9999
 end if
 !---------------------------------------------------------------------------------
@@ -688,7 +688,7 @@ end if
 !---------------------------------------------------------------------------------
 call q_chkconfig
 if (iq_err /=0) then
-  ierr = 6
+  ierror = 6
   goto 9999
 end if
 !---------------------------------------------------------------------------------
@@ -721,7 +721,7 @@ do idepth=1,ndepth
     call q_init
     call q_ctrgrid(2,igrid)
     if(iq_err /= 0) then
-      ierr = 7
+      ierror = 7
       goto 9999
     end if
   end if
@@ -746,7 +746,7 @@ return
 end subroutine
 !-----------------------------------------------------------------------------!
 subroutine xnl_main(aspec,sigma,angle,nsig,ndir,depth,iquad,xnl,diag, &
-&   iproc, ierr)
+&   iproc, ierror)
 !-----------------------------------------------------------------------------!
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -809,7 +809,7 @@ real,   intent(in)  :: depth            ! water depth
 real,   intent(out) :: xnl(nsig,ndir)   ! nonlinear quadruplet interaction computed with
 !                                         a certain exact method (k,theta)
 real,   intent(out) :: diag(nsig,ndir)  ! diagonal term for semi-implicit integration
-integer, intent(out) :: ierr          ! error indicator
+integer, intent(out) :: ierror          ! error indicator
 !
 !--------------------------------------------------------------------------------
 !
@@ -884,7 +884,7 @@ end if
 !
 !!if (iquad /= i_qlast .and. i_qmain/=1) then
 !!  call q_error('e','IQUAD','Value of IQUAD differs from initial value')
-!!  ierr = 1
+!!  ierror = 1
 !!  goto 9999
 !!end if
 !-----------------------------------------------------------------------------+
@@ -894,9 +894,9 @@ end if
 if(iquad>=1 .and. iquad <=3) then
 !
   a = aspec
-  call q_xnl4v4(aspec,sigma,angle,nsig,ndir,depth,xnl,diag,ierr)
+  call q_xnl4v4(aspec,sigma,angle,nsig,ndir,depth,xnl,diag,ierror)
 !
-  if(ierr/=0) then
+  if(ierror/=0) then
     call q_error('e','wrtvv','Problem in Q_XNL4V4')
     goto 9999
   end if
@@ -924,7 +924,7 @@ end if
 !
 9999 continue
 !
-ierr = iq_err
+ierror = iq_err
 !
 if(iq_log >= 1) then
   write(luq_log,*)
@@ -2952,6 +2952,7 @@ integer iaq,ikq    ! counters for loops over directions and wave numbers
 real ff            ! frequency
 !!!real z_wnumb       ! service function to compute wave number
 !
+integer iuerr      ! error indicator for i/o
 !------------------------------------------------------------------------------
 !
 call q_stack('+q_init')
@@ -5922,7 +5923,7 @@ end do
 return
 end subroutine
 !------------------------------------------------------------------------------
-subroutine q_xnl4v4(aspec,sigma,angle,nsig,nang,depth,xnl,diag,ierr)
+subroutine q_xnl4v4(aspec,sigma,angle,nsig,nang,depth,xnl,diag,ierror)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -5982,7 +5983,7 @@ real,   intent(in)  :: depth            ! water depth in m
 real,   intent(out) :: xnl(nsig,nang)   ! nonlinear quadruplet interaction computed with
 !                                         a certain exact method (k,theta)
 real,   intent(out) :: diag(nsig,nang)  ! Diagonal term for WAM based implicit integration scheme
-integer, intent(out) :: ierr          ! error indicator
+integer, intent(out) :: ierror          ! error indicator
 !
 !  4. Error messages
 !
@@ -6071,7 +6072,7 @@ call q_stack('+q_xnl4v4')
 !
 ! initialisations
 !------------------------------------------------------------------------------
-ierr = 0              ! error status
+ierror = 0              ! error status
 diag = 0                ! initialize output diagonal term
 !
 !

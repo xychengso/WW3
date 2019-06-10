@@ -343,7 +343,7 @@
 ! 
       IF ( GTYPE .EQ. CLGTYPE ) THEN 
 !/NCEP2! Allowing code to work with Lambert conformal grids 
-!/NCEP2      IF ( GDTN .NE. 30 .AND. GDTN .NE. 20 ) THEN 
+!/NCEP2      IF ( GDTN .NE. 30 .OR. GDTN .NE. 20 ) THEN 
         WRITE(NDSE,*)'PROGRAM W3GRIB: CURVILINEAR GRID SUPPORT '// & 
         'FOR GRIB OUTPUT IS NOT YET IMPLEMENTED. NOW STOPPING' 
         CALL EXTCDE ( 1 ) 
@@ -854,9 +854,14 @@
                '     ERROR IN READING FROM INPUT FILE'/               &
                '     IOSTAT =',I5/)
 !
+ 1005 FORMAT (/' *** WAVEWATCH III ERROR IN W3GRIB : '/               &
+               '     OUTPUT REQUESTED FOR FIELDS THAT SHARE KPDS(5)'/ &
+               '     FIRST FIELD  : ',A/                              &
+               '     SECOND FIELD : ',A/)
+!
  1010 FORMAT (/' *** WAVEWATCH-III ERROR IN W3GRIB : '/          &
                '     GRIB REQUIRES SPHERICAL GRID'/)
-!/NCEP2 1011 FORMAT (/' CHOSEN GRID TYPE: : ',A/)
+ 1011 FORMAT (/' CHOSEN GRID TYPE: : ',A/)
 !/
 !/ Internal subroutine W3EXGB ---------------------------------------- /
 !/
@@ -1527,36 +1532,44 @@
 !
 ! Error escape locations
 !
-!/NCEP2  810 CONTINUE
-!/NCEP2      WRITE (NDSE,1010) IO
-!/NCEP2      CALL EXTCDE ( 20 )
-!/NCEP2  820 CONTINUE
-!/NCEP2      WRITE (NDSE,1020) IO
-!/NCEP2      CALL EXTCDE ( 30 )
-!/NCEP2  830 CONTINUE
-!/NCEP2      WRITE (NDSE,1030) IO
-!/NCEP2      CALL EXTCDE ( 40 )
+  800 CONTINUE
+      WRITE (NDSE,1000) IERR
+      CALL EXTCDE ( 10 )
+  810 CONTINUE
+      WRITE (NDSE,1010) IO
+      CALL EXTCDE ( 20 )
+  820 CONTINUE
+      WRITE (NDSE,1020) IO
+      CALL EXTCDE ( 30 )
+  830 CONTINUE
+      WRITE (NDSE,1030) IO
+      CALL EXTCDE ( 40 )
 !
 ! Formats
+!
+  940 FORMAT (1X,I8,3I3.2,2X,4E12.4)
+  950 FORMAT (1X,A13,I9.8,I7.6,2(2F8.2,I4),                           &
+              1X,A4,F8.4,1X,A10,2I2,1X,A11,I4)
+  951 FORMAT (1X,2F10.5,2I8)
 !
   999 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB :'/                &
                '     PLEASE UPDATE FIELDS !!! '/)
 !
-!/NCEP2 1000 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
-!/NCEP2               '     ERROR IN OPENING OUTPUT FILE'/                   &
-!/NCEP2               '     IOSTAT =',I5/)
+ 1000 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
+               '     ERROR IN OPENING OUTPUT FILE'/                   &
+               '     IOSTAT =',I5/)
 !
-!/NCEP2 1010 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
-!/NCEP2               '     ERROR CREATING NEW GRIB2 FIELD'/                 &
-!/NCEP2               '     IOSTAT =',I5/)
+ 1010 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
+               '     ERROR CREATING NEW GRIB2 FIELD'/                 &
+               '     IOSTAT =',I5/)
 !
-!/NCEP2 1020 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
-!/NCEP2               '     ERROR ADDING GRIB2 FIELD'/                       &
-!/NCEP2               '     IOSTAT =',I5/)
+ 1020 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
+               '     ERROR ADDING GRIB2 FIELD'/                       &
+               '     IOSTAT =',I5/)
 !
-!/NCEP2 1030 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
-!/NCEP2               '     ERROR ENDING GRIB2 MESSAGE'/                     &
-!/NCEP2               '     IOSTAT =',I5/)
+ 1030 FORMAT (/' *** WAVEWATCH III ERROR IN W3EXGB : '/               &
+               '     ERROR ENDING GRIB2 MESSAGE'/                     &
+               '     IOSTAT =',I5/)
 !
 !/T 9000 FORMAT (' TEST W3EXGB : FLAGS  :',40L2)
 !/T 9001 FORMAT (' TEST W3EXGB : NDSDAT :',I4/                        &

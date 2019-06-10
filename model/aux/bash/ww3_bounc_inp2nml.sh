@@ -6,18 +6,8 @@ then
   echo '  [ERROR] need ww3_bounc input filename in argument [ww3_bounc.inp]'
   exit 1
 fi
-
-# link to temporary inp with regtest format
-inp="$( cd "$( dirname "$1" )" && pwd )/$(basename $1)"
-if [ ! -z $(echo $inp | awk -F'ww3_bounc\\..inp.' '{print $2}') ] ; then
- new_inp=$(echo $(echo $inp | awk -F'ww3_bounc\\..inp.' '{print $1}')ww3_bounc_$(echo $inp | awk -F'ww3_bounc\\..inp.' '{print $2}').inp)
- ln -sfn $inp $new_inp
- old_inp=$inp
- inp=$new_inp
-fi
-
-cd $( dirname $inp)
-cur_dir="../$(basename $(dirname $inp))"
+inp=$1
+cur_dir=$(dirname $1)
 
 
 version=$(bash --version | awk -F' ' '{print $4}')
@@ -50,11 +40,9 @@ do
     continue
   fi
 
-  echo "$line" >> $cleaninp
+  echo $line >> $cleaninp
 
 done
-
-
 
 #------------------------------
 # get all values from clean inp file
@@ -75,32 +63,13 @@ echo $verbose
 
 il=$(($il+1))
 tmpname="$(echo ${lines[$il]} | awk -F' ' '{print $1}' | cut -d \" -f2  | cut -d \' -f2)"
-forispec="$cur_dir/spec.list"
-fspec="$cur_dir/spec.list.new"
-spec_filename=$forispec
-rm -f $fspec
+rm -f $cur_dir/spec.list
 while [ "$tmpname" != "STOPSTRING" ]
 do
-  echo ${lines[$il]} >> $fspec
+  echo ${lines[$il]} >> $cur_dir/spec.list
   il=$(($il+1))
   tmpname="$(echo ${lines[$il]} | awk -F' ' '{print $1}' | cut -d \" -f2  | cut -d \' -f2)"
 done
-if [ -f $forispec ]
-then
-  if [ -z "$(diff $forispec $fspec)" ]
-  then
-    echo $forispec ' and ' $fspec 'are same.'
-    echo 'delete ' $fspec
-    rm $fspec
-  else
-    echo 'diff between :' $forispec ' and new file : ' $fspec
-    echo 'inp2nml conversion stopped'
-    exit 1
-  fi
-else
-  echo 'mv '$fspec ' to ' $forispec
-  mv $fspec $forispec
-fi
 
 
 
@@ -133,10 +102,9 @@ cat >> $nmlfile << EOF
 &BOUND_NML
 EOF
 
-if [ "${mode}" != "WRITE" ];  then            echo "  BOUND%MODE        =  '${mode}'" >> $nmlfile; fi
-if [ "$interp" != "2" ];  then                echo "  BOUND%INTERP      =  $interp" >> $nmlfile; fi
-if [ "$verbose" != "1" ];  then               echo "  BOUND%VERBOSE     =  $verbose" >> $nmlfile; fi
-if [ "$spec_filename" != "spec.list" ]; then  echo "  BOUND%FILE        =  '$spec_filename'" >> $nmlfile; fi
+if [ "${mode}" != "WRITE" ];  then       echo "  BOUND%MODE        =  '${mode}'" >> $nmlfile; fi
+if [ "$interp" != "2" ];  then           echo "  BOUND%INTERP      =  $interp" >> $nmlfile; fi
+if [ "$verbose" != "1" ];  then          echo "  BOUND%VERBOSE     =  $verbose" >> $nmlfile; fi
 
 cat >> $nmlfile << EOF
 /
@@ -146,13 +114,10 @@ cat >> $nmlfile << EOF
 ! WAVEWATCH III - end of namelist                                      !
 ! -------------------------------------------------------------------- !
 EOF
-echo "DONE : $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $nmlfile)"
+
 rm -f $cleaninp
-if [ ! -z $(echo $old_inp | awk -F'ww3_bounc\\..inp\\..' '{print $2}') ] ; then
-  unlink $new_inp
-  addon="$(echo $(basename $nmlfile) | awk -F'ww3_bounc_' '{print $2}' | awk -F'\\..nml' '{print $1}'  )"
-  new_nmlfile="ww3_bounc.nml.$addon"
-  mv $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $nmlfile) $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $new_nmlfile)
-  echo "RENAMED  : $( cd "$( dirname "$nmlfile" )" && pwd )/$(basename $new_nmlfile)"
-fi
 #------------------------------
+
+
+
+

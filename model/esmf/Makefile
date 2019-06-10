@@ -156,7 +156,6 @@ gout:
 	@sed -e "s/DIST/SHRD/g"\
 	     -e "s/MPIT/ /g"\
              -e "s/MPI/ /g"\
-             -e "s/PDLIB/ /g"\
                   $(WW3_BINDIR)/tempswitch > $(WW3_BINDIR)/switch
 	\rm -f $(WW3_BINDIR)/tempswitch
 	$(WW3_BINDIR)/w3_make ww3_grid
@@ -166,7 +165,6 @@ gout:
 	@sed -e "s/DIST/SHRD/g"\
              -e "s/MPIT/ /g"\
              -e "s/MPI/ /g"\
-             -e "s/PDLIB/ /g"\
              -e "s/NOGRB/NCEP2 NCO/g"\
                   $(WW3_BINDIR)/tempswitch > $(WW3_BINDIR)/switch
 	\rm -f $(WW3_BINDIR)/tempswitch

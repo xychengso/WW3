@@ -609,9 +609,6 @@
                 B_JGS_NORM_THR,                                       &
                 B_JGS_NLEVEL,                                         &
                 B_JGS_SOURCE_NONLINEAR
-              !Init COUNTCON to zero, it needs to be set somewhere or
-              !removed
-              COUNTCON=0
               WRITE (NDSM)                                            &
                 X0, Y0, SX, SY, DXYMAX, XYB, TRIGP, TRIA,             &
                 LEN, IEN, ANGLE0, ANGLE, SI, MAXX, MAXY,   &
@@ -640,7 +637,7 @@
                FLCK, FLSOU, FLBPI, FLBPO, CLATS, CLATIS, CTHG0S,      &
                STEXU, STEYU, STEDU, IICEHMIN, IICEHINIT, IICEDISP,    &
                ICESCALES(1:4), NOLEAP, CMPRTRCK, IICEHFAC, IICEHDISP, &
-               IICEDDISP, IICEFDISP, BTBETA
+               IICEDDISP, IICEFDISP
 
           WRITE(NDSM)GRIDSHIFT
 !/SEC1              WRITE (NDSM) NITERSEC1
@@ -780,7 +777,7 @@
                FLCTH, FLCK, FLSOU, FLBPI, FLBPO, CLATS, CLATIS,       &
                CTHG0S, STEXU, STEYU, STEDU, IICEHMIN, IICEHINIT,      &
                IICEDISP, ICESCALES(1:4), NOLEAP, CMPRTRCK, IICEHFAC,  &
-               IICEDDISP, IICEHDISP, IICEFDISP, BTBETA
+               IICEDDISP, IICEHDISP, IICEFDISP 
 !/DEBUGIOGR     WRITE(740+IAPROC,*) 'W3IOGR, step 7.14'
 !/DEBUGIOGR     FLUSH(740+IAPROC)
 

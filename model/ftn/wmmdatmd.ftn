@@ -526,7 +526,6 @@
           HGSTGE(I,J)%NSN1     =  0
           HGSTGE(I,J)%NSMX     =  0
 !/MPI          HGSTGE(I,J)%NRQHGS   =  0
-!/MPI          HGSTGE(I,J)%NRQOUT   =  0
           HGSTGE(I,J)%INIT     = .FALSE.
           EQSTGE(I,J)%VTIME(1) = -1
           EQSTGE(I,J)%VTIME(2) =  0
@@ -535,7 +534,6 @@
           EQSTGE(I,J)%NSND     =  0
           EQSTGE(I,J)%NAVMAX   =  1
 !/MPI          EQSTGE(I,J)%NRQEQS   =  0
-!/MPI          EQSTGE(I,J)%NRQOUT   =  0
           EQSTGE(I,J)%INIT     = .FALSE.
           END DO
         END DO
@@ -1032,9 +1030,7 @@
 !/
 !/    06-Jun-2018 : Origination.                        ( version 6.04 )
 !/
-!  1. Purpose : Introduce mapping for ISPROC and JSEA when using PDLIB
-!               in the Multigrid approach 
-!             
+!  1. Purpose :
 !  2. Method :
 !  3. Parameters :
 !
@@ -1075,7 +1071,6 @@
 !/
       integer, intent(in) :: ISEA, J
       integer, intent(out) :: JSEA, ISPROC
-      integer nb
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
@@ -1085,6 +1080,7 @@
 !/ ------------------------------------------------------------------- /
 !/
 !/S      CALL STRACE (IENT, 'INIT_GET_JSEA_ISPROC_GLOB')
+      integer nb
       IF (.NOT. LPDLIB) THEN
         nb=OUTPTS(J)%NAPROC
         JSEA   = 1 + (ISEA-1)/nb

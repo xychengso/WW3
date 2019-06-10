@@ -396,6 +396,10 @@
  1001 FORMAT (/' *** WAVEWATCH III ERROR IN W3TRNC : '/               &
                '     PREMATURE END OF INPUT FILE'/)
 !
+ 1002 FORMAT (/' *** WAVEWATCH III ERROR IN W3TRNC : '/               &
+               '     ERROR IN READING FROM INPUT FILE'/               &
+               '     IOSTAT =',I5/)
+!
  1004 FORMAT (/' *** WAVEWATCH III ERROR IN W3TRNC : '/               &
                '     ERROR IN OPENING INPUT FILE'/                    &
                '     IOSTAT =',I5/)
@@ -1064,7 +1068,7 @@
       IF (IRET .NE. NF90_NOERR) THEN
         WRITE(NDSE,*) ' *** WAVEWATCH III ERROR IN TRNC :'
         WRITE(NDSE,*) ' NETCDF ERROR MESSAGE: '
-        WRITE(NDSE,*) NF90_STRERROR(IRET)
+        WRITE(*,*) NF90_STRERROR(IRET)
         CALL EXTCDE ( 59 )
       END IF
       RETURN
@@ -1077,7 +1081,7 @@
 !/
 !/ End of W3TRNC ----------------------------------------------------- /
 !/
-      END PROGRAM W3TRNC
+     END PROGRAM W3TRNC
 
 
 

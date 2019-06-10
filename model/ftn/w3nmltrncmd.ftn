@@ -39,7 +39,6 @@
 
   ! miscellaneous
   CHARACTER(256)                :: MSG
-  INTEGER                       :: NDSN
 
 
 
@@ -103,6 +102,8 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
@@ -122,14 +123,6 @@
     IERR = 0
 !/S      CALL STRACE (IENT, 'W3NMLTRNC')
 
-    ! open namelist log file
-    NDSN = 3
-    OPEN (NDSN, file=TRIM(INFILE)//'.log', form='formatted', iostat=IERR)
-       IF (IERR.NE.0) THEN
-      WRITE (NDSE,'(A)') 'ERROR: open full nml file '//TRIM(INFILE)//'.log failed'
-      RETURN
-    END IF
-
     ! open input file
     OPEN (NDSI, file=TRIM(INFILE), form='formatted', status='old', iostat=IERR)
     IF (IERR.NE.0) THEN
@@ -138,16 +131,24 @@
     END IF
 
     ! read track namelist
-    CALL READ_TRACK_NML (NDSI, NML_TRACK)
-    CALL REPORT_TRACK_NML (NML_TRACK)
+    CALL READ_TRACK_NML (NDSI, NML_TRACK, IERR)
+    IF (IERR.NE.0) THEN
+      WRITE (NDSE,'(A)') 'ERROR: error occured in READ_TRACK_NML'
+      RETURN
+    END IF
+!/T    CALL REPORT_TRACK_NML (NML_TRACK)
 
     ! read file namelist
-    CALL READ_FILE_NML (NDSI, NML_FILE)
-    CALL REPORT_FILE_NML (NML_FILE)
+    CALL READ_FILE_NML (NDSI, NML_FILE, IERR)
+    IF (IERR.NE.0) THEN
+      WRITE (NDSE,'(A)') 'ERROR: error occured in READ_FILE_NML'
+      RETURN
+    END IF
+!/T    CALL REPORT_FILE_NML (NML_FILE)
 
-    ! close namelist files
+
+    ! close namelist file
     CLOSE (NDSI)
-    CLOSE (NDSN)
 
   END SUBROUTINE W3NMLTRNC
 
@@ -161,7 +162,7 @@
 
 !/ ------------------------------------------------------------------- /
 
-  SUBROUTINE READ_TRACK_NML (NDSI, NML_TRACK)
+  SUBROUTINE READ_TRACK_NML (NDSI, NML_TRACK, IERR)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -184,6 +185,7 @@
 !     ----------------------------------------------------------------
 !      NDSI         Int.
 !      NML_TRACK    Type.
+!      IERR         Int.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -212,19 +214,20 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
     USE W3ODATMD, ONLY: NDSE
-    USE W3SERVMD, ONLY: EXTCDE
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)                 :: NDSI
     TYPE(NML_TRACK_T), INTENT(INOUT)    :: NML_TRACK
-    INTEGER                             :: IERR
+    INTEGER, INTENT(OUT)                :: IERR
 
     ! locals
     TYPE(NML_TRACK_T) :: TRACK
@@ -247,7 +250,7 @@
       WRITE (NDSE,'(A,/A)') &
         'ERROR: READ_TRACK_NML: namelist read error', &
         'ERROR: '//TRIM(MSG)
-      CALL EXTCDE (1)
+      RETURN
     END IF
 
     ! save namelist
@@ -261,7 +264,7 @@
 
 !/ ------------------------------------------------------------------- /
 
-  SUBROUTINE READ_FILE_NML (NDSI, NML_FILE)
+  SUBROUTINE READ_FILE_NML (NDSI, NML_FILE, IERR)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -284,6 +287,7 @@
 !     ----------------------------------------------------------------
 !      NDSI         Int.
 !      NML_FILE     Type.
+!      IERR         Int.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -312,19 +316,20 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
     USE W3ODATMD, ONLY: NDSE
-    USE W3SERVMD, ONLY: EXTCDE
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
 
     INTEGER, INTENT(IN)                 :: NDSI
     TYPE(NML_FILE_T), INTENT(INOUT)     :: NML_FILE
-    INTEGER                             :: IERR
+    INTEGER, INTENT(OUT)                :: IERR
 
     ! locals
     TYPE(NML_FILE_T) :: FILE
@@ -341,11 +346,11 @@
     ! read file namelist
     REWIND (NDSI)
     READ (NDSI, nml=FILE_NML, iostat=IERR, iomsg=MSG)
-    IF (IERR.GT.0) THEN
+    IF (IERR.NE.0) THEN
       WRITE (NDSE,'(A,/A)') &
         'ERROR: READ_FILE_NML: namelist read error', &
         'ERROR: '//TRIM(MSG)
-      CALL EXTCDE (2)
+      RETURN
     END IF
 
     ! save namelist
@@ -413,10 +418,13 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
+    USE W3ODATMD, ONLY: SCREEN
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
@@ -427,16 +435,16 @@
 !/S      CALL STRACE (IENT, 'REPORT_TRACK_NML')
 
       WRITE (MSG,'(A)') 'TRACK % '
-      WRITE (NDSN,'(A)')
-      WRITE (NDSN,10) TRIM(MSG),'TIMESTART  = ', TRIM(NML_TRACK%TIMESTART)
-      WRITE (NDSN,10) TRIM(MSG),'TIMESTRIDE = ', TRIM(NML_TRACK%TIMESTRIDE)
-      WRITE (NDSN,10) TRIM(MSG),'TIMECOUNT  = ', TRIM(NML_TRACK%TIMECOUNT)
+      WRITE (SCREEN,'(A)')
+      WRITE (SCREEN,10) TRIM(MSG),'TIMESTART  = ', TRIM(NML_TRACK%TIMESTART)
+      WRITE (SCREEN,10) TRIM(MSG),'TIMESTRIDE = ', TRIM(NML_TRACK%TIMESTRIDE)
+      WRITE (SCREEN,10) TRIM(MSG),'TIMECOUNT  = ', TRIM(NML_TRACK%TIMECOUNT)
 
-      WRITE (NDSN,11) TRIM(MSG),'TIMESPLIT  = ', NML_TRACK%TIMESPLIT
+      WRITE (SCREEN,11) TRIM(MSG),'TIMESPLIT  = ', NML_TRACK%TIMESPLIT
 
 
 10  FORMAT (A,2X,A,A)
-11  FORMAT (A,2X,A,I8)
+11  FORMAT (A,2X,A,I1)
 
   END SUBROUTINE REPORT_TRACK_NML
 
@@ -499,10 +507,13 @@
 !
 !  9. Switches :
 !
+!     !/T  Enable test output.
+!
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
 
+    USE W3ODATMD, ONLY: SCREEN
 !/S      USE W3SERVMD, ONLY: STRACE
 
     IMPLICIT NONE
@@ -513,13 +524,13 @@
 !/S      CALL STRACE (IENT, 'REPORT_FILE_NML')
 
       WRITE (MSG,'(A)') 'FILE % '
-      WRITE (NDSN,'(A)')
-      WRITE (NDSN,10) TRIM(MSG),'PREFIX    = ', TRIM(NML_FILE%PREFIX)
-      WRITE (NDSN,11) TRIM(MSG),'NETCDF    = ', NML_FILE%NETCDF
+      WRITE (SCREEN,'(A)')
+      WRITE (SCREEN,10) TRIM(MSG),'PREFIX    = ', TRIM(NML_FILE%PREFIX)
+      WRITE (SCREEN,11) TRIM(MSG),'NETCDF    = ', NML_FILE%NETCDF
 
 
 10  FORMAT (A,2X,A,A)
-11  FORMAT (A,2X,A,I8)
+11  FORMAT (A,2X,A,I1)
 
   END SUBROUTINE REPORT_FILE_NML
 

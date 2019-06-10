@@ -30,12 +30,12 @@ cat 2>&1 << EOF
 
 Usage: $myname source_dir Options
 Required:
-  source_dir : path to model dir of WW3 source
+  source_dir : path to top-level of WW3 source
 Options:
-  -c cmplr         : setup comp & link files for specified cmplr (see manual section 5.6)
-  -s swtch         : setup switch file for specified swtch (see manual section 5.8)
+  -c cmplr         : setup comp & link files for specified cmplr
   -h               : print usage and exit
   -q               : do not prompt for changes to existing WW3 environment
+  -s swtch         : setup switch file for specfied swtch
   -e               : edit switch file
   -t tdir          : set path for scratch directory to tdir
 
@@ -165,11 +165,11 @@ then
 
   set `grep WWATCH3_F90 $ww3_env` ; shift
   comp_fc="$*"
-  echo "      auxiliary FORTRAN compiler  : $comp_fc"
+  echo "      FORTRAN compiler (aux only) : $comp_fc"
 
   set `grep WWATCH3_CC $ww3_env` ; shift
   comp_cc="$*"
-  echo "      auxiliary C compiler        : $comp_cc"
+  echo "      C compiler (aux only)       : $comp_cc"
 
   echo "      Source directory            : $path_s"
 
@@ -213,8 +213,8 @@ else
     echo ' '
     echo "   Default set up :"
     echo "      Printer (listings)       : $prntr"
-    echo "      Auxiliary FORTRAN comp.  : $comp_fc"
-    echo "      Auxiliary C compiler     : $comp_cc"
+    echo "      FORTRAN comp. (aux only) : $comp_fc"
+    echo "      C Compiler (aux only)    : $comp_cc"
     echo "      Scratch directory        : $temp_dir"
     echo "      Save sources             : $source"
     echo "      Save listings            : $list"
@@ -259,14 +259,14 @@ then
       prntr="$instr"
     fi
 
-    echo -n "      Auxiliary FORTRAN compiler [$comp_fc] : "
+    echo -n "      FORTRAN compiler for aux. [$comp_fc] : "
     instr="$NULL" ; read instr
     if [ -n "$instr" ]
     then
       comp_fc="$instr"
     fi
 
-    echo -n "      Auxiliary C compiler [$comp_cc] : "
+    echo -n "      C compiler for aux. [$comp_cc] : "
     instr="$NULL" ; read instr
     if [ -n "$instr" ]
     then
@@ -324,8 +324,8 @@ then
     echo ' '
     echo "   Modified set up :"
     echo "      Printer (listings)       : $prntr"
-    echo "      Auxiliary FORTRAN comp.  : $comp_fc"
-    echo "      Auxiliary C compiler     : $comp_cc"
+    echo "      FORTRAN comp. (aux only) : $comp_fc"
+    echo "      C Compiler (aux only)    : $comp_cc"
     echo "      Scratch directory        : $temp_dir"
     echo "      Save sources             : $source"
     echo "      Save listings            : $list"
